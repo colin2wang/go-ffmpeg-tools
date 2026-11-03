@@ -1,0 +1,17 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "go-ffmpeg-tools",
+  "outputfilename": "go-ffmpeg-tools",
+  "frontend:install": "pnpm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "go-ffmpeg-tools"
+  },
+  "info": {
+    "productName": "FFMpeg Tools",
+    "productVersion": "0.1.0",
+    "comments": "FFmpeg toolkit: MP4 subtitle mux (mov_text multi-track), burn and conversion tools"
+  }
+}
