@@ -17,9 +17,9 @@ func main() {
 
 	err := wails.Run(&options.App{
 		Title:     "FFMpeg Tools",
-		Width:     960,
-		Height:    720,
-		MinWidth:  800,
+		Width:     1280,
+		Height:    800,
+		MinWidth:  960,
 		MinHeight: 600,
 		AssetServer: &assetserver.Options{
 			Assets: assets,

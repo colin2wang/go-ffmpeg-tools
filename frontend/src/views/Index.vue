@@ -2,7 +2,7 @@
   <div class="page">
     <!-- 卡片1：源视频（支持拖拽 + 选择） -->
     <div class="card">
-      <div class="card-title">源视频</div>
+      <div class="card-title">{{ t('video.title') }}</div>
       <div
         class="drop-zone"
         data-drop-zone="video"
@@ -12,51 +12,51 @@
         @dragover.prevent
         @dragleave.prevent="videoDragOver = false"
       >
-        <span v-if="!inputVideo">📂 点击选择视频，或将视频拖拽到此处</span>
+        <span v-if="!inputVideo">{{ t('video.drop') }}</span>
         <span v-else :title="inputVideo">{{ inputVideo }}</span>
       </div>
     </div>
 
     <!-- 卡片2：输出设置 -->
     <div class="card">
-      <div class="card-title">输出设置</div>
+      <div class="card-title">{{ t('output.title') }}</div>
       <div class="form-row">
-        <label class="form-label">输出位置</label>
+        <label class="form-label">{{ t('output.location') }}</label>
         <select v-model="outputMode" class="output-mode">
-          <option value="custom">自定义文件路径</option>
-          <option value="same">和输入视频同目录</option>
-          <option value="exe">程序执行目录</option>
+          <option value="custom">{{ t('output.custom') }}</option>
+          <option value="same">{{ t('output.same') }}</option>
+          <option value="exe">{{ t('output.exe') }}</option>
         </select>
       </div>
       <div v-if="outputMode === 'custom'" class="form-row">
-        <label class="form-label">输出文件</label>
+        <label class="form-label">{{ t('output.file') }}</label>
         <div class="form-input-wrap">
-          <input class="input-ellipsis" readonly :value="outputVideo" :title="outputVideo" placeholder="设置输出 mp4 路径..." />
-          <button class="btn btn-secondary" @click="pickOutput">选择</button>
+          <input class="input-ellipsis" readonly :value="outputVideo" :title="outputVideo" :placeholder="t('output.filePlaceholder')" />
+          <button class="btn btn-secondary" @click="pickOutput">{{ t('common.select') }}</button>
         </div>
       </div>
       <div v-else class="form-row">
-        <label class="form-label">文件名后缀</label>
-        <input v-model="outputSuffix" class="output-suffix" placeholder="例如 .subbed.mp4" />
-        <span class="muted-hint">自动拼接生成输出路径</span>
+        <label class="form-label">{{ t('output.suffix') }}</label>
+        <input v-model="outputSuffix" class="output-suffix" :placeholder="t('output.suffixPlaceholder')" />
+        <span class="muted-hint">{{ t('output.autoHint') }}</span>
       </div>
     </div>
 
     <!-- 卡片3：字幕配置 Tab -->
     <div class="card">
-      <div class="card-title">字幕配置</div>
+      <div class="card-title">{{ t('sub.title') }}</div>
       <div class="tab-group">
         <button class="tab-item" :class="{ active: mode === 'soft' }" @click="mode = 'soft'">
-          软字幕封装（mov_text 多轨道，流复制，速度快）
+          {{ t('sub.softTab') }}
         </button>
         <button class="tab-item" :class="{ active: mode === 'burn' }" @click="mode = 'burn'">
-          硬字幕烧录（ass/srt 特效，需重编码）
+          {{ t('sub.burnTab') }}
         </button>
       </div>
 
       <!-- 软字幕 Tab -->
       <div v-if="mode === 'soft'" class="tab-content">
-        <p class="tip-warn">⚠️ mov_text 不支持 ASS 特效，此模式只能使用 srt 文本字幕；播放器需支持切换字幕轨道。</p>
+        <p class="tip-warn">{{ t('sub.softWarn') }}</p>
         <div
           class="drop-zone sub-drop"
           data-drop-zone="sub"
@@ -65,13 +65,13 @@
           @dragover.prevent
           @dragleave.prevent="subDragOver = false"
         >
-          📄 拖拽 SRT 字幕文件到这里，快速添加字幕轨道
+          {{ t('sub.softDrop') }}
         </div>
         <div class="track-list">
           <SubTrackRow
-            v-for="(t, i) in tracks"
-            :key="t.id"
-            :track="t"
+            v-for="(tr, i) in tracks"
+            :key="tr.id"
+            :track="tr"
             :is-first="i === 0"
             :is-last="i === tracks.length - 1"
             @remove="removeTrack"
@@ -79,7 +79,7 @@
             @move-down="moveTrackDown"
           />
         </div>
-        <button class="btn btn-secondary" @click="addTrackByDialog">+ 添加字幕轨道（手动选择）</button>
+        <button class="btn btn-secondary" @click="addTrackByDialog">{{ t('sub.addTrack') }}</button>
       </div>
 
       <!-- 硬字幕 Tab -->
@@ -92,26 +92,26 @@
           @dragover.prevent
           @dragleave.prevent="burnSubDragOver = false"
         >
-          📄 拖拽 SRT / ASS 字幕文件到此处
+          {{ t('sub.burnDrop') }}
         </div>
         <div class="form-row">
-          <label class="form-label">字幕文件</label>
+          <label class="form-label">{{ t('sub.fileLabel') }}</label>
           <div class="form-input-wrap">
-            <input class="input-ellipsis" readonly :value="burnSubFile" :title="burnSubFile" placeholder="选择 srt/ass 字幕" />
-            <button class="btn btn-secondary" @click="pickBurnSub">选择</button>
+            <input class="input-ellipsis" readonly :value="burnSubFile" :title="burnSubFile" :placeholder="t('sub.filePlaceholder')" />
+            <button class="btn btn-secondary" @click="pickBurnSub">{{ t('common.select') }}</button>
           </div>
         </div>
         <div class="form-row">
-          <label class="form-label">字体名称</label>
-          <input v-model="fontName" class="font-name" placeholder="如 Microsoft YaHei" />
-          <label class="form-label label-short">字体大小</label>
+          <label class="form-label">{{ t('sub.fontName') }}</label>
+          <input v-model="fontName" class="font-name" :placeholder="t('sub.fontNamePlaceholder')" />
+          <label class="form-label label-short">{{ t('sub.fontSize') }}</label>
           <input v-model.number="fontSize" type="number" class="font-size" min="8" max="96" />
         </div>
         <div class="form-row">
-          <label class="form-label">字体文件</label>
+          <label class="form-label">{{ t('sub.fontFile') }}</label>
           <div class="form-input-wrap">
-            <input class="input-ellipsis" readonly :value="fontFile" :title="fontFile" placeholder="可选，指定 .ttf/.otf" />
-            <button class="btn btn-secondary" @click="pickFont">选择</button>
+            <input class="input-ellipsis" readonly :value="fontFile" :title="fontFile" :placeholder="t('sub.fontFilePlaceholder')" />
+            <button class="btn btn-secondary" @click="pickFont">{{ t('common.select') }}</button>
           </div>
         </div>
       </div>
@@ -119,14 +119,14 @@
 
     <div class="action-bar">
       <button class="btn btn-primary" :disabled="!canSubmit || store.hasActive" @click="submit">
-        {{ store.hasActive ? '处理中...' : '开始处理' }}
+        {{ store.hasActive ? t('action.processing') : t('action.start') }}
       </button>
     </div>
 
     <!-- 卡片4：任务队列 -->
     <div class="card">
-      <div class="card-title">任务队列</div>
-      <div v-if="store.jobList.length === 0" class="empty-tip">暂无任务，添加视频开始字幕封装</div>
+      <div class="card-title">{{ t('queue.title') }}</div>
+      <div v-if="store.jobList.length === 0" class="empty-tip">{{ t('queue.empty') }}</div>
       <div v-else class="job-list">
         <JobCard v-for="job in store.jobList" :key="job.jobId" :job="job" />
       </div>
@@ -136,15 +136,18 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { EventsOn, OnFileDrop } from '../../wailsjs/runtime/runtime'
 import { SelectFile, SelectOutputFile, SubmitJob } from '../../wailsjs/go/main/App'
 import { main, task } from '../../wailsjs/go/models'
 import { useJobsStore } from '../stores/jobs'
+import { openLog } from '../composables/logPanel'
 import type { Job, OutputMode, SubMode, SubTrack } from '../types/task'
 import { inferLang } from '../types/task'
 import SubTrackRow from '../components/SubTrackRow.vue'
 import JobCard from '../components/JobCard.vue'
 
+const { t } = useI18n()
 const store = useJobsStore()
 
 // ========== 拖拽悬浮标记（仅用于高亮，落点分发走 Wails OnFileDrop） ==========
@@ -190,10 +193,17 @@ function handleDroppedPaths(zone: string | null, paths: string[]) {
     return
   }
   if (zone === 'sub') {
-    // 批量拖拽 .srt：逐个推断语言后添加轨道
+    // 批量拖拽 .srt：先填入默认的空轨道，其余逐个推断语言后新增
     for (const p of paths.filter((p) => /\.srt$/i.test(p))) {
       const lang = inferLang(p)
-      tracks.value.push(newTrack(p, lang, lang))
+      const empty = tracks.value.find((t) => !t.file)
+      if (empty) {
+        empty.file = p
+        empty.lang = lang
+        empty.title = lang
+      } else {
+        tracks.value.push(newTrack(p, lang, lang))
+      }
     }
     return
   }
@@ -220,22 +230,29 @@ function moveTrackDown(id: string) {
   moveTrack(id, 1)
 }
 
-// 手动添加轨道：选中文件后同样走语言推断
+// 手动添加轨道：选中文件后同样优先填入默认空轨道，再走语言推断
 async function addTrackByDialog() {
-  const file = await SelectFile('选择字幕文件 (srt/ass)', [
-    { DisplayName: '字幕文件 (*.srt; *.ass)', Pattern: '*.srt;*.ass' },
-    { DisplayName: '所有文件 (*.*)', Pattern: '*.*' },
+  const file = await SelectFile(t('sub.pickerTitle'), [
+    { DisplayName: t('sub.files'), Pattern: '*.srt;*.ass' },
+    { DisplayName: t('common.allFiles'), Pattern: '*.*' },
   ])
   if (!file) return
   const lang = inferLang(file)
-  tracks.value.push(newTrack(file, lang, lang))
+  const empty = tracks.value.find((t) => !t.file)
+  if (empty) {
+    empty.file = file
+    empty.lang = lang
+    empty.title = lang
+  } else {
+    tracks.value.push(newTrack(file, lang, lang))
+  }
 }
 
 // ========== 文件选择 ==========
 async function pickVideo() {
-  const f = await SelectFile('选择输入视频', [
-    { DisplayName: '视频文件 (*.mp4; *.mkv; *.mov; *.m4v)', Pattern: '*.mp4;*.mkv;*.mov;*.m4v' },
-    { DisplayName: '所有文件 (*.*)', Pattern: '*.*' },
+  const f = await SelectFile(t('video.pickerTitle'), [
+    { DisplayName: t('video.videoFiles'), Pattern: '*.mp4;*.mkv;*.mov;*.m4v' },
+    { DisplayName: t('common.allFiles'), Pattern: '*.*' },
   ])
   if (f) {
     inputVideo.value = f
@@ -246,22 +263,22 @@ async function pickVideo() {
 }
 
 async function pickOutput() {
-  const f = await SelectOutputFile('选择输出文件', 'output.mp4')
+  const f = await SelectOutputFile(t('output.pickerTitle'), 'output.mp4')
   if (f) outputVideo.value = f
 }
 
 async function pickBurnSub() {
-  const f = await SelectFile('选择字幕文件 (srt/ass)', [
-    { DisplayName: '字幕文件 (*.srt; *.ass)', Pattern: '*.srt;*.ass' },
-    { DisplayName: '所有文件 (*.*)', Pattern: '*.*' },
+  const f = await SelectFile(t('sub.pickerTitle'), [
+    { DisplayName: t('sub.files'), Pattern: '*.srt;*.ass' },
+    { DisplayName: t('common.allFiles'), Pattern: '*.*' },
   ])
   if (f) burnSubFile.value = f
 }
 
 async function pickFont() {
-  const f = await SelectFile('选择字体文件', [
-    { DisplayName: '字体文件 (*.ttf; *.otf; *.ttc)', Pattern: '*.ttf;*.otf;*.ttc' },
-    { DisplayName: '所有文件 (*.*)', Pattern: '*.*' },
+  const f = await SelectFile(t('sub.fontPickerTitle'), [
+    { DisplayName: t('sub.fontFiles'), Pattern: '*.ttf;*.otf;*.ttc' },
+    { DisplayName: t('common.allFiles'), Pattern: '*.*' },
   ])
   if (f) fontFile.value = f
 }
@@ -307,9 +324,28 @@ async function submit() {
   if (job) store.upsertJob(job as unknown as Job)
 }
 
+// 任务成功后清空输入：视频、输出路径与字幕轨道列表
+function resetForm() {
+  inputVideo.value = ''
+  outputVideo.value = ''
+  videoDragOver.value = false
+  subDragOver.value = false
+  burnSubDragOver.value = false
+  burnSubFile.value = ''
+  fontFile.value = ''
+  tracks.value = [newTrack()]
+}
+
 onMounted(() => {
   EventsOn('jobUpdate', (job: any) => {
-    if (job && job.jobId) store.updateJob(job)
+    if (job && job.jobId) {
+      store.updateJob(job)
+      // 日志实时流入底部日志框：每次任务更新即刷新面板内容
+      const name = (job.outputVideo ?? '').replace(/\\/g, '/').split('/').pop() || t('job.unnamed')
+      openLog(name, job.log ?? [])
+      // 任务成功后自动清空表单，方便处理下一个视频
+      if (job.status === 'done') resetForm()
+    }
   })
   // Wails 原生拖拽：关闭内建 drop-target 过滤，自行按坐标反查拖放区
   OnFileDrop((x, y, paths) => {
@@ -351,5 +387,3 @@ onMounted(() => {
   flex: 1;
 }
 </style>
-
-

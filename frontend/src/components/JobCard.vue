@@ -1,14 +1,14 @@
 <template>
   <div class="job-card" :class="job.status">
     <div class="job-header">
-      <span class="job-title" :title="job.outputVideo">{{ fileName(job.outputVideo) || '未命名输出' }}</span>
+      <span class="job-title" :title="job.outputVideo">{{ fileName(job.outputVideo) || t('job.unnamed') }}</span>
       <span class="job-tag" :class="job.status">{{ statusLabel(job.status) }}</span>
       <button
         v-if="job.status === 'pending' || job.status === 'running'"
         class="btn btn-secondary btn-sm"
         @click="cancel(job.jobId)"
       >
-        取消
+        {{ t('job.cancel') }}
       </button>
     </div>
     <div class="progress-bar-wrap">
@@ -19,21 +19,18 @@
         {{ modeLabel(job.subConfig.mode) }} · {{ fmtTime(job.currentSeconds) }} / {{ fmtTime(job.totalSeconds) }} ·
         {{ progressPct.toFixed(1) }}%
       </span>
-      <button class="btn btn-secondary btn-sm" @click="showLog = !showLog">
-        {{ showLog ? '收起日志' : '▶ 日志' }}
-      </button>
     </div>
-    <div v-if="showLog" class="log-panel">{{ job.log.join('\n') }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { CancelJob } from '../../wailsjs/go/main/App'
 import type { Job } from '../types/task'
 
+const { t } = useI18n()
 const props = defineProps<{ job: Job }>()
-const showLog = ref(false)
 
 const progressPct = computed(() => Math.max(0, Math.min(100, props.job.progress ?? 0)))
 
@@ -42,18 +39,11 @@ function fileName(p: string): string {
 }
 
 function statusLabel(s: Job['status']): string {
-  const map: Record<Job['status'], string> = {
-    pending: '等待中',
-    running: '运行中',
-    done: '已完成',
-    error: '失败',
-    cancelled: '已取消',
-  }
-  return map[s] ?? s
+  return t('job.' + s)
 }
 
 function modeLabel(m: string): string {
-  return m === 'soft' ? '软字幕封装 (mov_text)' : '硬字幕烧录'
+  return m === 'soft' ? t('job.softMode') : t('job.burnMode')
 }
 
 function fmtTime(sec: number): string {
