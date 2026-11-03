@@ -1,3 +1,30 @@
+export namespace ffmpeg {
+	
+	export class VersionInfo {
+	    version: string;
+	    firstLine: string;
+	    builtWith: string;
+	    config: string;
+	    path: string;
+	    raw: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new VersionInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this.firstLine = source["firstLine"];
+	        this.builtWith = source["builtWith"];
+	        this.config = source["config"];
+	        this.path = source["path"];
+	        this.raw = source["raw"];
+	    }
+	}
+
+}
+
 export namespace frontend {
 	
 	export class FileFilter {

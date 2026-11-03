@@ -39,6 +39,7 @@
       <!-- 内容区 -->
       <main class="content">
         <Index v-if="activeMenu === 'subtitle'" />
+        <Version v-else-if="activeMenu === 'info'" />
         <div v-else class="placeholder">{{ t('app.placeholder') }}</div>
       </main>
     </div>
@@ -66,6 +67,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Index from './views/Index.vue'
+import Version from './views/Version.vue'
 import LogPanel from './components/LogPanel.vue'
 import { useTheme } from './composables/theme'
 import { logVisible, toggleLog } from './composables/logPanel'
@@ -86,7 +88,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { key: 'subtitle', icon: '🎬' },
   { key: 'convert', icon: '🎞', disabled: true },
-  { key: 'info', icon: 'ℹ️', disabled: true },
+  { key: 'info', icon: 'ℹ️' },
 ]
 
 const { t, locale } = useI18n()

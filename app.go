@@ -166,6 +166,11 @@ func (a *App) GetJobs() []*task.Job {
 	return out
 }
 
+// GetFFmpegVersion 获取 ffmpeg 版本信息（landing page 使用）
+func (a *App) GetFFmpegVersion() (*ffmpeg.VersionInfo, error) {
+	return ffmpeg.GetVersionInfo()
+}
+
 // SelectFile 打开文件选择对话框（通用）
 func (a *App) SelectFile(title string, filters []runtime.FileFilter) (string, error) {
 	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{

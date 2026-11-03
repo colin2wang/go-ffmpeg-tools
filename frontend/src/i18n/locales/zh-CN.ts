@@ -89,6 +89,14 @@ export default {
     error: '失败',
     cancelled: '已取消',
   },
+  version: {
+    title: 'FFmpeg 版本信息',
+    loading: '正在获取版本信息…',
+    version: '版本号',
+    path: '可执行文件路径',
+    builtWith: '编译环境',
+    config: '编译配置',
+  },
   track: {
     noFile: '未选择文件',
     titlePlaceholder: '轨道显示名称',

@@ -89,6 +89,14 @@ export default {
     error: 'Failed',
     cancelled: 'Cancelled',
   },
+  version: {
+    title: 'FFmpeg Version',
+    loading: 'Fetching version info…',
+    version: 'Version',
+    path: 'Executable path',
+    builtWith: 'Built with',
+    config: 'Configuration',
+  },
   track: {
     noFile: 'No file selected',
     titlePlaceholder: 'Track display name',

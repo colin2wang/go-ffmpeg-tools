@@ -6,6 +6,10 @@ export function CancelJob(arg1) {
   return window['go']['main']['App']['CancelJob'](arg1);
 }
 
+export function GetFFmpegVersion() {
+  return window['go']['main']['App']['GetFFmpegVersion']();
+}
+
 export function GetJobs() {
   return window['go']['main']['App']['GetJobs']();
 }

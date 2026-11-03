@@ -89,6 +89,14 @@ export default {
     error: '失敗',
     cancelled: 'キャンセル済み',
   },
+  version: {
+    title: 'FFmpeg バージョン情報',
+    loading: 'バージョン情報を取得中…',
+    version: 'バージョン',
+    path: '実行ファイルのパス',
+    builtWith: 'ビルド環境',
+    config: 'ビルド設定',
+  },
   track: {
     noFile: 'ファイル未選択',
     titlePlaceholder: 'トラック表示名',
