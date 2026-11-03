@@ -15,6 +15,15 @@
         <span v-if="!inputVideo">{{ t('video.drop') }}</span>
         <span v-else :title="inputVideo">{{ inputVideo }}</span>
       </div>
+      <!-- 内嵌字幕轨道列表（探测到才显示），支持逐条导出为 srt -->
+      <div v-if="subStreams.length" class="embedded-list">
+        <div v-for="s in subStreams" :key="s.index" class="embedded-row">
+          <span class="embedded-label" :title="`0:s:${s.relIndex}`">
+            #{{ s.index }} {{ s.codecName }} · {{ s.language || 'und' }}<template v-if="s.title"> · {{ s.title }}</template>
+          </span>
+          <button class="btn btn-secondary btn-export" @click="exportSub(s)">{{ t('video.export') }}</button>
+        </div>
+      </div>
     </div>
 
     <!-- 卡片2：输出设置 -->
@@ -37,7 +46,7 @@
       </div>
       <div v-else class="form-row">
         <label class="form-label">{{ t('output.suffix') }}</label>
-        <input v-model="outputSuffix" class="output-suffix" :placeholder="t('output.suffixPlaceholder')" />
+        <input v-model="outputSuffix" class="output-suffix" :placeholder="defaultSuffix" />
         <span class="muted-hint">{{ t('output.autoHint') }}</span>
       </div>
     </div>
@@ -138,12 +147,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { EventsOn, OnFileDrop } from '../../wailsjs/runtime/runtime'
-import { SelectFile, SelectOutputFile, SubmitJob } from '../../wailsjs/go/main/App'
-import { main, task } from '../../wailsjs/go/models'
+import { SelectFile, SelectOutputFile, SubmitJob, ProbeSubtitles, ExtractSubtitle, InferSubtitleLang } from '../../wailsjs/go/main/App'
+import { main, task, ffmpeg } from '../../wailsjs/go/models'
 import { useJobsStore } from '../stores/jobs'
-import { openLog } from '../composables/logPanel'
+import { openLog, logVisible } from '../composables/logPanel'
 import type { Job, OutputMode, SubMode, SubTrack } from '../types/task'
-import { inferLang } from '../types/task'
 import SubTrackRow from '../components/SubTrackRow.vue'
 import JobCard from '../components/JobCard.vue'
 
@@ -159,9 +167,11 @@ const burnSubDragOver = ref(false)
 const inputVideo = ref('')
 const outputMode = ref<OutputMode>('same')
 const outputVideo = ref('')
-const outputSuffix = ref('.subbed.mp4')
+const outputSuffix = ref('.subbed')
 const mode = ref<SubMode>('soft')
 const tracks = ref<SubTrack[]>([])
+// 内嵌字幕流（选定源视频后探测，0 条则不显示）
+const subStreams = ref<ffmpeg.SubStream[]>([])
 // 硬字幕专属
 const burnSubFile = ref('')
 const fontName = ref('Microsoft YaHei')
@@ -182,7 +192,7 @@ function zoneAt(x: number, y: number): string | null {
   return (el as HTMLElement | null)?.closest('[data-drop-zone]')?.getAttribute('data-drop-zone') ?? null
 }
 
-function handleDroppedPaths(zone: string | null, paths: string[]) {
+async function handleDroppedPaths(zone: string | null, paths: string[]) {
   videoDragOver.value = false
   subDragOver.value = false
   burnSubDragOver.value = false
@@ -190,12 +200,13 @@ function handleDroppedPaths(zone: string | null, paths: string[]) {
   if (zone === 'video') {
     inputVideo.value = paths[0]
     if (outputMode.value !== 'custom') outputVideo.value = ''
+    probeEmbedded(paths[0])
     return
   }
   if (zone === 'sub') {
-    // 批量拖拽 .srt：先填入默认的空轨道，其余逐个推断语言后新增
+    // 批量拖拽 .srt：先填入默认的空轨道，其余逐个推断语言后新增（语言推断走后端，异步）
     for (const p of paths.filter((p) => /\.srt$/i.test(p))) {
-      const lang = inferLang(p)
+      const lang = await InferSubtitleLang(p)
       const empty = tracks.value.find((t) => !t.file)
       if (empty) {
         empty.file = p
@@ -209,6 +220,33 @@ function handleDroppedPaths(zone: string | null, paths: string[]) {
   }
   if (zone === 'burn') {
     burnSubFile.value = paths[0]
+  }
+}
+
+// ========== 内嵌字幕探测与导出 ==========
+// 选定源视频后探测内嵌字幕流；失败静默（视为无内嵌字幕）
+async function probeEmbedded(video: string) {
+  subStreams.value = []
+  if (!video) return
+  try {
+    subStreams.value = (await ProbeSubtitles(video)) ?? []
+  } catch {
+    /* 无 ffprobe 或无字幕：忽略 */
+  }
+}
+
+// 导出一条内嵌字幕：弹保存对话框（默认 <视频名>.<语言>.srt），完成后在日志面板提示
+async function exportSub(s: ffmpeg.SubStream) {
+  const base = decodeURIComponent(inputVideo.value.replace(/\\/g, '/').split('/').pop() ?? '').replace(/\.[^.]+$/, '')
+  const out = await SelectOutputFile(t('video.exportPicker'), `${base}.${s.language || 'und'}.srt`)
+  if (!out) return
+  try {
+    await ExtractSubtitle(inputVideo.value, s.index, out)
+    openLog(t('video.embedded'), [`${t('video.exportOk')}: ${out}`])
+    logVisible.value = true
+  } catch (e) {
+    openLog(t('video.embedded'), [`${t('video.exportFail')}: ${String(e)}`])
+    logVisible.value = true
   }
 }
 
@@ -237,7 +275,7 @@ async function addTrackByDialog() {
     { DisplayName: t('common.allFiles'), Pattern: '*.*' },
   ])
   if (!file) return
-  const lang = inferLang(file)
+  const lang = await InferSubtitleLang(file)
   const empty = tracks.value.find((t) => !t.file)
   if (empty) {
     empty.file = file
@@ -248,6 +286,9 @@ async function addTrackByDialog() {
   }
 }
 
+// 后缀只保留名字后缀部分，扩展名由后端跟随源容器决定
+const defaultSuffix = computed(() => '.subbed')
+
 // ========== 文件选择 ==========
 async function pickVideo() {
   const f = await SelectFile(t('video.pickerTitle'), [
@@ -256,6 +297,7 @@ async function pickVideo() {
   ])
   if (f) {
     inputVideo.value = f
+    probeEmbedded(f)
     if (outputMode.value !== 'custom') {
       outputVideo.value = ''
     }
@@ -292,11 +334,12 @@ const canSubmit = computed(() => {
 
 async function submit() {
   if (!canSubmit.value) return
-  // 烧录模式只用第一条轨道
-  const usableTracks =
-    mode.value === 'soft'
-      ? tracks.value.filter((t) => t.file)
-      : [newTrack(burnSubFile.value, inferLang(burnSubFile.value), inferLang(burnSubFile.value))]
+  // 烧录模式只用第一条轨道（语言推断走后端）
+  let usableTracks = tracks.value.filter((t) => t.file)
+  if (mode.value !== 'soft') {
+    const lang = await InferSubtitleLang(burnSubFile.value)
+    usableTracks = [newTrack(burnSubFile.value, lang, lang)]
+  }
   // wailsjs 生成的模型类带 convertValues 运行时方法，直接以字面量调用会被拒收，
   // 这里按生成的类型构造并做窄化断言
   const req = new main.SubmitJobReq({
@@ -328,6 +371,7 @@ async function submit() {
 function resetForm() {
   inputVideo.value = ''
   outputVideo.value = ''
+  subStreams.value = []
   videoDragOver.value = false
   subDragOver.value = false
   burnSubDragOver.value = false
@@ -378,6 +422,30 @@ onMounted(() => {
 }
 .sub-drop {
   margin-bottom: var(--gap-md);
+}
+.embedded-list {
+  margin-top: var(--gap-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.embedded-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+}
+.embedded-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btn-export {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 2px 10px;
 }
 .muted-hint {
   color: var(--text-muted);

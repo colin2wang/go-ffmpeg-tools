@@ -1,5 +1,25 @@
 export namespace ffmpeg {
 	
+	export class SubStream {
+	    index: number;
+	    relIndex: number;
+	    codecName: string;
+	    language: string;
+	    title: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SubStream(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.index = source["index"];
+	        this.relIndex = source["relIndex"];
+	        this.codecName = source["codecName"];
+	        this.language = source["language"];
+	        this.title = source["title"];
+	    }
+	}
 	export class VersionInfo {
 	    version: string;
 	    firstLine: string;

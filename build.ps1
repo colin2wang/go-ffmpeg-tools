@@ -49,7 +49,11 @@ if ($LASTEXITCODE -ne 0) { Pop-Location; Write-Error "pnpm install failed." }
 Pop-Location
 
 Write-Host "==> Running Wails build..." -ForegroundColor Cyan
-$wailsArgs = @("build", "-clean")
+# 编译时间（本地时区），通过 -ldflags -X 注入 main.buildTime，标题栏展示。
+# 时间含空格，值内层加单引号，go build 解析 ldflags 时按引号保留完整值
+$buildTime = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+Write-Host "    build time: $buildTime"
+$wailsArgs = @("build", "-clean", "-ldflags", "-X 'main.buildTime=$buildTime'")
 if ($DebugBuild) { $wailsArgs += "-debug" }
 if ($Platform -ne "") { $wailsArgs += @("-platform", $Platform) }
 & wails @wailsArgs

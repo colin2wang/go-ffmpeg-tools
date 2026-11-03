@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -112,6 +113,98 @@ func GetVersionInfo() (*VersionInfo, error) {
 		}
 	}
 	return info, nil
+}
+
+// SubStream 视频内嵌字幕流信息
+type SubStream struct {
+	Index     int    `json:"index"`     // ffprobe 中的绝对流索引
+	RelIndex  int    `json:"relIndex"`  // 在字幕流中的相对序号（-map 0:s:N 用）
+	CodecName string `json:"codecName"` // subrip / mov_text / ass / hdmv_pgs_subtitle 等
+	Language  string `json:"language"`  // language tag，可能为空
+	Title     string `json:"title"`     // 轨道标题，可能为空
+}
+
+// ProbeSubtitles 用 ffprobe 列出视频内嵌字幕流；无字幕时返回空切片。
+func ProbeSubtitles(videoPath string) ([]SubStream, error) {
+	bin, err := GetFFprobeBinPath()
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command(bin,
+		"-v", "error",
+		"-select_streams", "s",
+		"-show_entries", "stream=index,codec_name:stream_tags=language,title",
+		"-of", "json",
+		videoPath,
+	)
+	hideCmdWindow(cmd)
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("probe subtitle streams: %w", err)
+	}
+	var parsed struct {
+		Streams []struct {
+			Index     int    `json:"index"`
+			CodecName string `json:"codec_name"`
+			Tags      struct {
+				Language string `json:"language"`
+				Title    string `json:"title"`
+			} `json:"tags"`
+		} `json:"streams"`
+	}
+	if err := json.Unmarshal(out, &parsed); err != nil {
+		return nil, fmt.Errorf("parse ffprobe output: %w", err)
+	}
+	streams := make([]SubStream, 0, len(parsed.Streams))
+	for i, s := range parsed.Streams {
+		streams = append(streams, SubStream{
+			Index:     s.Index,
+			RelIndex:  i,
+			CodecName: s.CodecName,
+			Language:  s.Tags.Language,
+			Title:     s.Tags.Title,
+		})
+	}
+	return streams, nil
+}
+
+// ExtractSubtitle 导出第 streamIndex（绝对流索引）路内嵌字幕为 srt；
+// 位图字幕（PGS / DVD / DVB 等）无法转为文本，返回错误。
+func ExtractSubtitle(videoPath string, streamIndex int, outPath string) error {
+	streams, err := ProbeSubtitles(videoPath)
+	if err != nil {
+		return err
+	}
+	var target *SubStream
+	for i := range streams {
+		if streams[i].Index == streamIndex {
+			target = &streams[i]
+			break
+		}
+	}
+	if target == nil {
+		return fmt.Errorf("subtitle stream 0:%d not found", streamIndex)
+	}
+	switch strings.ToLower(target.CodecName) {
+	case "dvd_subtitle", "hdmv_pgs_subtitle", "dvb_subtitle", "dvb_teletext":
+		return fmt.Errorf("bitmap subtitle codec %s cannot be exported as srt", target.CodecName)
+	}
+
+	ffBin, err := GetFFmpegBinPath()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(ffBin, "-y",
+		"-i", videoPath,
+		"-map", fmt.Sprintf("0:s:%d", target.RelIndex),
+		"-c:s", "srt",
+		outPath,
+	)
+	hideCmdWindow(cmd)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("extract subtitle: %w: %s", err, strings.TrimSpace(string(out)))
+	}
+	return nil
 }
 
 // ProbeDuration 用 ffprobe 探测视频总时长（秒）；探测失败返回 0，由调用方容忍。

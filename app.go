@@ -47,17 +47,22 @@ func (a *App) resolveOutputPath(req SubmitJobReq) (string, error) {
 	base := strings.TrimSuffix(filepath.Base(req.InputVideo), filepath.Ext(req.InputVideo))
 	suffix := req.OutputSuffix
 	if suffix == "" {
-		suffix = ".subbed.mp4"
+		suffix = ".subbed"
+	} else if ext := filepath.Ext(suffix); strings.TrimSuffix(suffix, ext) != "" {
+		// 容忍旧格式：后缀里带了扩展名（如 .subbed.mp4）则剥掉，
+		// 输出扩展名始终跟随源容器
+		suffix = strings.TrimSuffix(suffix, ext)
 	}
+	ext := filepath.Ext(req.InputVideo)
 	switch req.OutputMode {
 	case "same":
-		return filepath.Join(filepath.Dir(req.InputVideo), base+suffix), nil
+		return filepath.Join(filepath.Dir(req.InputVideo), base+suffix+ext), nil
 	case "exe":
 		exePath, err := os.Executable()
 		if err != nil {
 			return "", fmt.Errorf("resolve executable dir: %w", err)
 		}
-		return filepath.Join(filepath.Dir(exePath), base+suffix), nil
+		return filepath.Join(filepath.Dir(exePath), base+suffix+ext), nil
 	default:
 		return req.OutputVideo, nil
 	}
@@ -164,6 +169,21 @@ func (a *App) GetJobs() []*task.Job {
 		out = append(out, j.Snapshot())
 	}
 	return out
+}
+
+// ProbeSubtitles 列出视频内嵌字幕流
+func (a *App) ProbeSubtitles(videoPath string) ([]ffmpeg.SubStream, error) {
+	return ffmpeg.ProbeSubtitles(videoPath)
+}
+
+// ExtractSubtitle 导出视频内嵌字幕为 srt 文件
+func (a *App) ExtractSubtitle(videoPath string, streamIndex int, outPath string) error {
+	return ffmpeg.ExtractSubtitle(videoPath, streamIndex, outPath)
+}
+
+// InferSubtitleLang 从字幕文件名推断语言代码（chs/cht/eng/jpn/kor）
+func (a *App) InferSubtitleLang(path string) string {
+	return ffmpeg.InferLang(path)
 }
 
 // GetFFmpegVersion 获取 ffmpeg 版本信息（landing page 使用）

@@ -11,7 +11,7 @@ The current release focuses on subtitle workflows for MP4 video: muxing multiple
 - **Soft subtitles (mux)** — attach multiple `.srt` tracks as `mov_text` streams. Video and audio streams are copied (`-c:v copy -c:a copy`), so the job is fast and lossless. Each track carries its own `language` and `title` metadata, so players show a proper subtitle selector.
 - **Hard subtitles (burn-in)** — render the first track into the video through the `subtitles` filter, with optional `FontName` / `FontSize` override and a custom font directory (`fontsdir`). Audio is copied.
 - **Language auto-detection** — infers the language code from the subtitle file name (`chs`, `cht`, `eng`, `jpn`, `kor`, plus Chinese/English naming variants) and normalizes shortcuts like `chs`/`zh-hans` to ISO 639-2 tags.
-- **Flexible output paths** — choose a custom destination, write next to the source video, or write next to the executable, with a configurable file-name suffix (default `.subbed.mp4`).
+- **Flexible output paths** — choose a custom destination, write next to the source video, or write next to the executable, with a configurable file-name suffix (default `.subbed`; the output extension follows the source video's container).
 - **Drag & drop** — drop video and subtitle files directly onto the corresponding UI zones.
 - **Real-time progress & logs** — duration is probed with `ffprobe`, progress is parsed from ffmpeg output and throttled to ~5 events/s, and each job keeps a full log including the exact command line executed.
 - **Concurrency & cancellation** — submit multiple jobs at once; each runs in its own goroutine and can be cancelled individually.
@@ -19,9 +19,19 @@ The current release focuses on subtitle workflows for MP4 video: muxing multiple
 - **i18n** — Simplified Chinese, English, and Japanese (fallback: `zh-CN`).
 - **Light / dark theme**.
 
-## Screenshot area
+## Screenshots
 
-> Add your own screenshot under `docs/` and replace this line with `![UI](docs/screenshot.png)`.
+**Subtitle tools — source video & output settings** (suffix-only naming; the output extension follows the source video's container):
+
+![Subtitle tools main](docs/images/subtitle-tools-main.png)
+
+**Multi-track subtitle queue** — tracks were added by drag & drop; language and display name are auto-detected from the file names (`chs` for the Simplified Chinese track, `eng` for the auto-generated English one):
+
+![Subtitle tools tracks](docs/images/subtitle-tools-tracks.png)
+
+**Media Info** — the bundled ffmpeg's version, executable path, build toolchain and full compile configuration:
+
+![Media info version](docs/images/media-info-version.png)
 
 ## Tech stack
 

@@ -7,7 +7,9 @@ Go 1.26 + Wails v2.16.0 (Wails CLI pinned to v2.16.0) desktop app, with a Vue3 +
 - Backend checks only: `go build ./...`, `go vet ./...` (no Go tests in the repo yet).
 - Frontend checks only: run `npm run build` in `frontend/` (includes `vue-tsc --noEmit` type checking).
 - Dev hot-reload: `wails dev`.
+- Do NOT compile or verify changes — never run `go build`, `go vet`, `npm run build`, or any build/test commands unless the user explicitly asks.
 - App icons: `./generate-icon.ps1` rasterizes `frontend/public/favicon.svg` into `build/appicon.png` (1024px) and `build/windows/icon.ico`. Uses ImageMagick → Inkscape → headless Edge/Chrome (first available); without ImageMagick the ICO is assembled via System.Drawing. Run it after changing the SVG.
+- Build time is injected by `build.ps1` via `-ldflags "-X main.buildTime=<local time>"` and shown in the window title (`main.appTitle`); with `wails dev` / plain `go run` it is empty and the title stays plain.
 
 ## Architecture
 - `main.go`: wails.Run, `//go:embed all:frontend/dist` embeds the frontend bundle; `Bind` exposes the `App` methods from `app.go` to the frontend.

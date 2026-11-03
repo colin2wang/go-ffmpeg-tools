@@ -50,13 +50,5 @@ export const LANG_PRESETS: Array<{ code: string; label: string }> = [
   { code: 'kor', label: '한국어' },
 ]
 
-// 从字幕文件名推断语言代码，失败返回默认值 eng
-export function inferLang(file: string): string {
-  const name = decodeURIComponent(file.replace(/\\/g, '/').split('/').pop() ?? '').toLowerCase()
-  if (/(chs|zh-hans|zh-cn|简体|简中|sc)|chinese.?\(simplified\)|(?<![a-z])gb(?![a-z0-9])/.test(name)) return 'chs'
-  if (/(cht|zh-hant|zh-tw|zh-hk|繁体|繁體|繁中|tc|big5)|chinese.?\(traditional\)/.test(name)) return 'cht'
-  if (/(eng|english|英文|英语)|english.?\(united states\)/.test(name)) return 'eng'
-  if (/(jpn|japanese|日文|日语|日本語)/.test(name)) return 'jpn'
-  if (/(kor|korean|韩文|韩语|韓文|한국)/.test(name)) return 'kor'
-  return 'eng'
-}
+// 语言推断已移至后端 internal/ffmpeg/lang.go（ffmpeg.InferLang，整词边界匹配），
+// 前端通过 App.InferSubtitleLang 调用

@@ -12,11 +12,24 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+// buildTime 由 build.ps1 通过 -ldflags -X 在打包时注入（本地时间）；
+// wails dev / 直接 go run 时为空，标题保持原样
+var buildTime string
+
+// appTitle 窗口标题：打包产物带上编译时间，如 "FFMpeg Tools (build 2026-11-03 22:06:00)"
+func appTitle() string {
+	title := "FFMpeg Tools"
+	if buildTime != "" {
+		title += " (build " + buildTime + ")"
+	}
+	return title
+}
+
 func main() {
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:     "FFMpeg Tools",
+		Title:     appTitle(),
 		Width:     1280,
 		Height:    800,
 		MinWidth:  960,

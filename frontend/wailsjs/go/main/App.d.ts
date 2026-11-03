@@ -7,9 +7,15 @@ import {main} from '../models';
 
 export function CancelJob(arg1:string):Promise<boolean>;
 
+export function ExtractSubtitle(arg1:string,arg2:number,arg3:string):Promise<void>;
+
 export function GetFFmpegVersion():Promise<ffmpeg.VersionInfo>;
 
 export function GetJobs():Promise<Array<task.Job>>;
+
+export function InferSubtitleLang(arg1:string):Promise<string>;
+
+export function ProbeSubtitles(arg1:string):Promise<Array<ffmpeg.SubStream>>;
 
 export function SelectFile(arg1:string,arg2:Array<frontend.FileFilter>):Promise<string>;
 

@@ -6,12 +6,24 @@ export function CancelJob(arg1) {
   return window['go']['main']['App']['CancelJob'](arg1);
 }
 
+export function ExtractSubtitle(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ExtractSubtitle'](arg1, arg2, arg3);
+}
+
 export function GetFFmpegVersion() {
   return window['go']['main']['App']['GetFFmpegVersion']();
 }
 
 export function GetJobs() {
   return window['go']['main']['App']['GetJobs']();
+}
+
+export function InferSubtitleLang(arg1) {
+  return window['go']['main']['App']['InferSubtitleLang'](arg1);
+}
+
+export function ProbeSubtitles(arg1) {
+  return window['go']['main']['App']['ProbeSubtitles'](arg1);
 }
 
 export function SelectFile(arg1, arg2) {
