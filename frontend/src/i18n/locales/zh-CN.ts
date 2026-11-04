@@ -12,6 +12,7 @@ export default {
   },
   app: {
     language: '语言',
+    backToTop: '回到顶部',
     lightMode: '浅色模式',
     darkMode: '深色模式',
     placeholder: '功能开发中…',
@@ -80,6 +81,7 @@ export default {
   queue: {
     title: '任务队列',
     empty: '暂无任务，添加视频开始字幕封装',
+    clear: '清空',
   },
   job: {
     unnamed: '未命名输出',

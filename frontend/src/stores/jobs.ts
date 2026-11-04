@@ -22,7 +22,8 @@ export const useJobsStore = defineStore('jobs', {
   actions: {
     upsertJob(job: Job) {
       if (!this.jobs[job.jobId]) {
-        this.order.push(job.jobId)
+        // 新任务插到队首：任务队列 latest on top
+        this.order.unshift(job.jobId)
       }
       this.jobs[job.jobId] = job
     },
@@ -33,6 +34,10 @@ export const useJobsStore = defineStore('jobs', {
       } else {
         this.upsertJob(job as Job)
       }
+    },
+    clearJobs() {
+      this.jobs = {}
+      this.order = []
     },
   },
 })

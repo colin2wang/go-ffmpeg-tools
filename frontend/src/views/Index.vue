@@ -137,7 +137,16 @@
 
     <!-- 卡片4：任务队列 -->
     <div class="card">
-      <div class="card-title">{{ t('queue.title') }}</div>
+      <div class="card-title card-title-row">
+        {{ t('queue.title') }}
+        <button
+          v-if="store.jobList.length > 0"
+          class="btn btn-secondary btn-clear"
+          @click="store.clearJobs()"
+        >
+          {{ t('queue.clear') }}
+        </button>
+      </div>
       <div v-if="store.jobList.length === 0" class="empty-tip">
         <Clapperboard class="empty-icon" :size="30" :stroke-width="1.4" />
         <p>{{ t('queue.empty') }}</p>
@@ -429,6 +438,16 @@ onMounted(() => {
 }
 .sub-drop {
   margin-bottom: var(--gap-md);
+}
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.btn-clear {
+  height: 26px;
+  padding: 0 12px;
+  font-size: 12px;
 }
 .embedded-list {
   margin-top: var(--gap-sm);

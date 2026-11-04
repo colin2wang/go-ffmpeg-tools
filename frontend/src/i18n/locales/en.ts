@@ -12,6 +12,7 @@ export default {
   },
   app: {
     language: 'Language',
+    backToTop: 'Back to top',
     lightMode: 'Light mode',
     darkMode: 'Dark mode',
     placeholder: 'Coming soon…',
@@ -80,6 +81,7 @@ export default {
   queue: {
     title: 'Job Queue',
     empty: 'No jobs yet — add a video to start subtitle muxing',
+    clear: 'Clear all',
   },
   job: {
     unnamed: 'Untitled output',

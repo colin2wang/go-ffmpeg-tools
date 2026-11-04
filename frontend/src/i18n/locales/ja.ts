@@ -12,6 +12,7 @@ export default {
   },
   app: {
     language: '言語',
+    backToTop: 'トップへ戻る',
     lightMode: 'ライトモード',
     darkMode: 'ダークモード',
     placeholder: '開発中…',
@@ -80,6 +81,7 @@ export default {
   queue: {
     title: 'タスクキュー',
     empty: 'タスクはありません。動画を追加して字幕処理を開始しましょう',
+    clear: 'すべて削除',
   },
   job: {
     unnamed: '出力名なし',
