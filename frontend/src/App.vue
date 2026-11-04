@@ -4,6 +4,7 @@
     <header class="navbar">
       <div class="navbar-brand">FFMpeg Tools</div>
       <div class="navbar-actions">
+        <span class="lang-icon" :title="t('app.language')"><Languages :size="16" :stroke-width="1.75" /></span>
         <select
           class="lang-switch"
           :value="locale"
@@ -12,7 +13,7 @@
           <option v-for="opt in LOCALE_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
         </select>
         <button class="btn btn-secondary btn-icon" :title="isDark ? t('app.lightMode') : t('app.darkMode')" @click="toggleTheme">
-          {{ isDark ? '☀' : '🌙' }}
+          <component :is="isDark ? Sun : Moon" :size="16" :stroke-width="1.75" />
         </button>
       </div>
     </header>
@@ -30,7 +31,7 @@
             :disabled="item.disabled"
             @click="!item.disabled && (activeMenu = item.key)"
           >
-            <span class="menu-icon">{{ item.icon }}</span>
+            <span class="menu-icon"><component :is="item.icon" :size="16" :stroke-width="1.75" /></span>
             <span>{{ t('menu.' + item.key) }}</span>
           </button>
         </nav>
@@ -38,9 +39,11 @@
 
       <!-- 内容区 -->
       <main class="content">
-        <Index v-if="activeMenu === 'subtitle'" />
-        <Version v-else-if="activeMenu === 'info'" />
-        <div v-else class="placeholder">{{ t('app.placeholder') }}</div>
+        <!-- 字幕工具页用 v-show 常驻：表单状态（视频/字幕路径）跨页面保留，
+             且 onMounted 里的 OnFileDrop 只注册一次，避免切页后旧回调闭包残留 -->
+        <Index v-show="activeMenu === 'subtitle'" />
+        <Version v-if="activeMenu === 'info'" />
+        <div v-if="activeMenu === 'convert'" class="placeholder">{{ t('app.placeholder') }}</div>
       </main>
     </div>
 
@@ -56,7 +59,7 @@
         :title="logVisible ? t('log.collapse') : t('log.expand')"
         @click="toggleLog"
       >
-        <span class="chevron">{{ logVisible ? '▾' : '▴' }}</span> {{ t('log.title') }}
+        <component :is="logVisible ? ChevronDown : ChevronUp" :size="12" /> {{ t('log.title') }}
       </button>
       <span>{{ t('status.total', { n: store.jobList.length }) }}</span>
     </footer>
@@ -64,8 +67,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Subtitles, Repeat, Info, Sun, Moon, ChevronDown, ChevronUp, Languages } from 'lucide-vue-next'
 import Index from './views/Index.vue'
 import Version from './views/Version.vue'
 import LogPanel from './components/LogPanel.vue'
@@ -81,14 +85,15 @@ onMounted(() => {
 
 interface MenuItem {
   key: string
-  icon: string
+  icon: Component
   disabled?: boolean
 }
 
+// emoji 字符串 → 图标组件
 const menuItems: MenuItem[] = [
-  { key: 'subtitle', icon: '🎬' },
-  { key: 'convert', icon: '🎞', disabled: true },
-  { key: 'info', icon: 'ℹ️' },
+  { key: 'subtitle', icon: Subtitles },
+  { key: 'convert', icon: Repeat, disabled: true },
+  { key: 'info', icon: Info },
 ]
 
 const { t, locale } = useI18n()
@@ -106,4 +111,11 @@ function switchLocale(value: Locale) {
 
 <style lang="scss">
 @import './styles/app.scss';
+
+// 语言切换图标：与下拉框垂直居中
+.lang-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-secondary);
+}
 </style>

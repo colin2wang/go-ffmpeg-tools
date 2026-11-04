@@ -1,7 +1,10 @@
 <template>
   <div v-if="logVisible" class="log-window">
     <div class="log-window-header">
-      <span class="log-window-title">📄 {{ logTitle }}</span>
+      <span class="log-window-title">
+        <FileText :size="13" />
+        <span class="log-window-text">{{ logTitle }}</span>
+      </span>
       <div class="log-window-actions">
         <label class="log-auto-popup">
           <input v-model="autoPopup" type="checkbox" /> {{ t('log.autoPopup') }}
@@ -16,6 +19,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { FileText } from 'lucide-vue-next'
 import { logVisible, logTitle, logLines, autoPopup, closeLog, clearLog } from '../composables/logPanel'
 
 const { t } = useI18n()
@@ -40,10 +44,16 @@ const { t } = useI18n()
   flex-shrink: 0;
 }
 .log-window-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 13px;
   color: var(--text-secondary);
   overflow: hidden;
   white-space: nowrap;
+}
+.log-window-text {
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 .log-window-actions {

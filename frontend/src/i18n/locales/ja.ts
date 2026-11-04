@@ -11,6 +11,7 @@ export default {
     info: 'メディア情報',
   },
   app: {
+    language: '言語',
     lightMode: 'ライトモード',
     darkMode: 'ダークモード',
     placeholder: '開発中…',
@@ -30,7 +31,7 @@ export default {
   },
   video: {
     title: 'ソース動画',
-    drop: '📂 クリックして動画を選択、またはここにドラッグ',
+    drop: 'クリックして動画を選択、またはここにドラッグ',
     pickerTitle: '入力動画を選択',
     videoFiles: '動画ファイル (*.mp4; *.mkv; *.mov; *.m4v)',
     embedded: '埋め込み字幕',
@@ -56,9 +57,9 @@ export default {
     softTab: 'ソフト字幕（mov_text マルチトラック、ストリームコピー、高速）',
     burnTab: 'ハード字幕焼き込み（ass/srt エフェクト、再エンコード）',
     softWarn:
-      '⚠️ mov_text は ASS エフェクトに対応していません。このモードでは srt テキスト字幕のみ使用でき、プレイヤー側で字幕トラックを切り替える必要があります。',
-    softDrop: '📄 ここに SRT 字幕ファイルをドラッグしてトラックを追加',
-    burnDrop: '📄 ここに SRT / ASS 字幕ファイルをドラッグ',
+      'mov_text は ASS エフェクトに対応していません。このモードでは srt テキスト字幕のみ使用でき、プレイヤー側で字幕トラックを切り替える必要があります。',
+    softDrop: 'ここに SRT 字幕ファイルをドラッグしてトラックを追加',
+    burnDrop: 'ここに SRT / ASS 字幕ファイルをドラッグ',
     addTrack: '+ 字幕トラックを追加（ファイルを選択）',
     fileLabel: '字幕ファイル',
     filePlaceholder: 'srt/ass 字幕を選択',

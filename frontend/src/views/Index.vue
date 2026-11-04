@@ -4,7 +4,7 @@
     <div class="card">
       <div class="card-title">{{ t('video.title') }}</div>
       <div
-        class="drop-zone"
+        class="drop-zone video-drop"
         data-drop-zone="video"
         :class="{ 'drag-over': videoDragOver }"
         @click="pickVideo"
@@ -12,7 +12,10 @@
         @dragover.prevent
         @dragleave.prevent="videoDragOver = false"
       >
-        <span v-if="!inputVideo">{{ t('video.drop') }}</span>
+        <template v-if="!inputVideo">
+          <FileVideo :size="24" :stroke-width="1.5" />
+          <span>{{ t('video.drop') }}</span>
+        </template>
         <span v-else :title="inputVideo">{{ inputVideo }}</span>
       </div>
       <!-- 内嵌字幕轨道列表（探测到才显示），支持逐条导出为 srt -->
@@ -65,7 +68,7 @@
 
       <!-- 软字幕 Tab -->
       <div v-if="mode === 'soft'" class="tab-content">
-        <p class="tip-warn">{{ t('sub.softWarn') }}</p>
+        <p class="tip-warn"><TriangleAlert :size="14" /> {{ t('sub.softWarn') }}</p>
         <div
           class="drop-zone sub-drop"
           data-drop-zone="sub"
@@ -74,7 +77,7 @@
           @dragover.prevent
           @dragleave.prevent="subDragOver = false"
         >
-          {{ t('sub.softDrop') }}
+          <FileText :size="14" /> {{ t('sub.softDrop') }}
         </div>
         <div class="track-list">
           <SubTrackRow
@@ -101,7 +104,7 @@
           @dragover.prevent
           @dragleave.prevent="burnSubDragOver = false"
         >
-          {{ t('sub.burnDrop') }}
+          <FileText :size="14" /> {{ t('sub.burnDrop') }}
         </div>
         <div class="form-row">
           <label class="form-label">{{ t('sub.fileLabel') }}</label>
@@ -135,7 +138,10 @@
     <!-- 卡片4：任务队列 -->
     <div class="card">
       <div class="card-title">{{ t('queue.title') }}</div>
-      <div v-if="store.jobList.length === 0" class="empty-tip">{{ t('queue.empty') }}</div>
+      <div v-if="store.jobList.length === 0" class="empty-tip">
+        <Clapperboard class="empty-icon" :size="30" :stroke-width="1.4" />
+        <p>{{ t('queue.empty') }}</p>
+      </div>
       <div v-else class="job-list">
         <JobCard v-for="job in store.jobList" :key="job.jobId" :job="job" />
       </div>
@@ -146,6 +152,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { FileVideo, FileText, TriangleAlert, Clapperboard } from 'lucide-vue-next'
 import { EventsOn, OnFileDrop } from '../../wailsjs/runtime/runtime'
 import { SelectFile, SelectOutputFile, SubmitJob, ProbeSubtitles, ExtractSubtitle, InferSubtitleLang } from '../../wailsjs/go/main/App'
 import { main, task, ffmpeg } from '../../wailsjs/go/models'
@@ -453,5 +460,13 @@ onMounted(() => {
 }
 .tab-item {
   flex: 1;
+}
+.video-drop {
+  min-height: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 </style>

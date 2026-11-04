@@ -11,6 +11,7 @@ export default {
     info: 'Media Info',
   },
   app: {
+    language: 'Language',
     lightMode: 'Light mode',
     darkMode: 'Dark mode',
     placeholder: 'Coming soon…',
@@ -30,7 +31,7 @@ export default {
   },
   video: {
     title: 'Source Video',
-    drop: '📂 Click to choose a video, or drag one here',
+    drop: 'Click to choose a video, or drag one here',
     pickerTitle: 'Select input video',
     videoFiles: 'Video files (*.mp4; *.mkv; *.mov; *.m4v)',
     embedded: 'Embedded subtitles',
@@ -56,9 +57,9 @@ export default {
     softTab: 'Soft subtitles (mov_text multi-track, stream copy, fast)',
     burnTab: 'Hard burn (ass/srt effects, re-encode required)',
     softWarn:
-      '⚠️ mov_text does not support ASS effects; this mode only accepts plain-text srt subtitles. The player must support switching subtitle tracks.',
-    softDrop: '📄 Drag SRT subtitle files here to quickly add tracks',
-    burnDrop: '📄 Drag SRT / ASS subtitle files here',
+      'mov_text does not support ASS effects; this mode only accepts plain-text srt subtitles. The player must support switching subtitle tracks.',
+    softDrop: 'Drag SRT subtitle files here to quickly add tracks',
+    burnDrop: 'Drag SRT / ASS subtitle files here',
     addTrack: '+ Add subtitle track (browse)',
     fileLabel: 'Subtitle file',
     filePlaceholder: 'Choose srt/ass subtitle',

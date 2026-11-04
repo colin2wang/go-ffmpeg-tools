@@ -11,6 +11,7 @@ export default {
     info: '媒体信息',
   },
   app: {
+    language: '语言',
     lightMode: '浅色模式',
     darkMode: '深色模式',
     placeholder: '功能开发中…',
@@ -30,7 +31,7 @@ export default {
   },
   video: {
     title: '源视频',
-    drop: '📂 点击选择视频，或将视频拖拽到此处',
+    drop: '点击选择视频，或将视频拖拽到此处',
     pickerTitle: '选择输入视频',
     videoFiles: '视频文件 (*.mp4; *.mkv; *.mov; *.m4v)',
     embedded: '内嵌字幕',
@@ -56,9 +57,9 @@ export default {
     softTab: '软字幕封装（mov_text 多轨道，流复制，速度快）',
     burnTab: '硬字幕烧录（ass/srt 特效，需重编码）',
     softWarn:
-      '⚠️ mov_text 不支持 ASS 特效，此模式只能使用 srt 文本字幕；播放器需支持切换字幕轨道。',
-    softDrop: '📄 拖拽 SRT 字幕文件到这里，快速添加字幕轨道',
-    burnDrop: '📄 拖拽 SRT / ASS 字幕文件到此处',
+      'mov_text 不支持 ASS 特效，此模式只能使用 srt 文本字幕；播放器需支持切换字幕轨道。',
+    softDrop: '拖拽 SRT 字幕文件到这里，快速添加字幕轨道',
+    burnDrop: '拖拽 SRT / ASS 字幕文件到此处',
     addTrack: '+ 添加字幕轨道（手动选择）',
     fileLabel: '字幕文件',
     filePlaceholder: '选择 srt/ass 字幕',

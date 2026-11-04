@@ -5,14 +5,21 @@
       <option v-for="p in LANG_PRESETS" :key="p.code" :value="p.code">{{ p.label }} ({{ p.code }})</option>
     </select>
     <input v-model="track.title" class="title" :placeholder="t('track.titlePlaceholder')" />
-    <button class="btn btn-secondary btn-icon" :disabled="isFirst" :title="t('track.moveUp')" @click="$emit('move-up', track.id)">↑</button>
-    <button class="btn btn-secondary btn-icon" :disabled="isLast" :title="t('track.moveDown')" @click="$emit('move-down', track.id)">↓</button>
-    <button class="btn btn-secondary btn-icon" :title="t('track.remove')" @click="$emit('remove', track.id)">×</button>
+    <button class="btn btn-secondary btn-icon" :disabled="isFirst" :title="t('track.moveUp')" @click="$emit('move-up', track.id)">
+      <ChevronUp :size="14" />
+    </button>
+    <button class="btn btn-secondary btn-icon" :disabled="isLast" :title="t('track.moveDown')" @click="$emit('move-down', track.id)">
+      <ChevronDown :size="14" />
+    </button>
+    <button class="btn btn-secondary btn-icon" :title="t('track.remove')" @click="$emit('remove', track.id)">
+      <X :size="14" />
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { ChevronUp, ChevronDown, X } from 'lucide-vue-next'
 import { LANG_PRESETS, type SubTrack } from '../types/task'
 
 const { t } = useI18n()
