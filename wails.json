@@ -1,7 +1,7 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "go-ffmpeg-tools",
-  "outputfilename": "go-ffmpeg-tools",
+  "outputfilename": "ffmpeg-tools",
   "frontend:install": "pnpm install",
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
