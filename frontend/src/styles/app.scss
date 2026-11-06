@@ -240,6 +240,12 @@ svg.lucide {
   font-variant-numeric: tabular-nums; // 任务计数不跳动
   transition: background 0.25s ease;
 }
+// 状态栏左侧：状态文本 + 抽屉展开/隐藏按钮
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+}
 .btn-log-toggle {
   display: flex;
   align-items: center;
@@ -257,7 +263,6 @@ svg.lucide {
     background: var(--bg-card-hover);
     color: var(--text-primary);
   }
-  &.open { color: var(--primary); }
 }
 
 // 滚动条美化

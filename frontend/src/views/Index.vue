@@ -18,13 +18,16 @@
         </template>
         <span v-else :title="inputVideo">{{ inputVideo }}</span>
       </div>
-      <!-- 内嵌字幕轨道列表（探测到才显示），支持逐条导出为 srt -->
+      <!-- 内嵌字幕轨道列表（探测到才显示），支持逐条查看 / 导出为 srt -->
       <div v-if="subStreams.length" class="embedded-list">
         <div v-for="s in subStreams" :key="s.index" class="embedded-row">
           <span class="embedded-label" :title="`0:s:${s.relIndex}`">
             #{{ s.index }} {{ s.codecName }} · {{ s.language || 'und' }}<template v-if="s.title"> · {{ s.title }}</template>
           </span>
-          <button class="btn btn-secondary btn-export" @click="exportSub(s)">{{ t('video.export') }}</button>
+          <div class="embedded-actions">
+            <button class="btn btn-secondary btn-embedded" @click="viewSub(s)">{{ t('video.view') }}</button>
+            <button class="btn btn-secondary btn-embedded" @click="exportSub(s)">{{ t('video.export') }}</button>
+          </div>
         </div>
       </div>
     </div>
@@ -135,41 +138,30 @@
       </button>
     </div>
 
-    <!-- 卡片4：任务队列 -->
-    <div class="card">
-      <div class="card-title card-title-row">
-        {{ t('queue.title') }}
-        <button
-          v-if="store.jobList.length > 0"
-          class="btn btn-secondary btn-clear"
-          @click="store.clearJobs()"
-        >
-          {{ t('queue.clear') }}
-        </button>
-      </div>
-      <div v-if="store.jobList.length === 0" class="empty-tip">
-        <Clapperboard class="empty-icon" :size="30" :stroke-width="1.4" />
-        <p>{{ t('queue.empty') }}</p>
-      </div>
-      <div v-else class="job-list">
-        <JobCard v-for="job in store.jobList" :key="job.jobId" :job="job" />
-      </div>
-    </div>
+    <!-- 字幕查看对话框：常驻以便复用已解码的字幕文本 -->
+    <SubtitleViewer
+      :visible="viewerVisible"
+      :video-path="inputVideo"
+      :streams="subStreams"
+      :initial-index="viewerIndex"
+      @close="viewerVisible = false"
+      @export="exportSub"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { FileVideo, FileText, TriangleAlert, Clapperboard } from 'lucide-vue-next'
-import { EventsOn, OnFileDrop } from '../../wailsjs/runtime/runtime'
+import { FileVideo, FileText, TriangleAlert } from 'lucide-vue-next'
 import { SelectFile, SelectOutputFile, SubmitJob, ProbeSubtitles, ExtractSubtitle, InferSubtitleLang } from '../../wailsjs/go/main/App'
 import { main, task, ffmpeg } from '../../wailsjs/go/models'
 import { useJobsStore } from '../stores/jobs'
-import { openLog, logVisible } from '../composables/logPanel'
+import { openLog, openDock } from '../composables/bottomDock'
+import { registerDropZone } from '../composables/fileDrop'
 import type { Job, OutputMode, SubMode, SubTrack } from '../types/task'
 import SubTrackRow from '../components/SubTrackRow.vue'
-import JobCard from '../components/JobCard.vue'
+import SubtitleViewer from '../components/SubtitleViewer.vue'
 
 const { t } = useI18n()
 const store = useJobsStore()
@@ -188,6 +180,9 @@ const mode = ref<SubMode>('soft')
 const tracks = ref<SubTrack[]>([])
 // 内嵌字幕流（选定源视频后探测，0 条则不显示）
 const subStreams = ref<ffmpeg.SubStream[]>([])
+// 字幕查看对话框：visible 控制显隐，index 记录点「查看」时选中的流
+const viewerVisible = ref(false)
+const viewerIndex = ref(0)
 // 硬字幕专属
 const burnSubFile = ref('')
 const fontName = ref('Microsoft YaHei')
@@ -199,15 +194,9 @@ function newTrack(file = '', lang = 'eng', title = ''): SubTrack {
   return { id: `t${++trackSeq}`, file, lang, title }
 }
 
-// ========== 拖拽事件（Wails 原生文件拖拽，OnFileDrop 返回绝对路径） ==========
-// useDropTarget=false：任意位置落点都会回调，由这里自行反查所属拖放区
-// （Wails 内建的 drop-target 检查只看落点元素本身样式，拖到区域内文字上会丢回调）
-// 落点反查：video=源视频 / sub=软字幕轨道 / burn=硬字幕文件
-function zoneAt(x: number, y: number): string | null {
-  const el = document.elementFromPoint(x, y)
-  return (el as HTMLElement | null)?.closest('[data-drop-zone]')?.getAttribute('data-drop-zone') ?? null
-}
-
+// ========== 拖拽事件（Wails OnFileDrop 全局注册，按 data-drop-zone 分发到这里） ==========
+// 落点反查与分发在 App.vue，本页只注册各区处理器：
+// video=源视频 / sub=软字幕轨道 / burn=硬字幕文件
 async function handleDroppedPaths(zone: string | null, paths: string[]) {
   videoDragOver.value = false
   subDragOver.value = false
@@ -239,9 +228,11 @@ async function handleDroppedPaths(zone: string | null, paths: string[]) {
   }
 }
 
-// ========== 内嵌字幕探测与导出 ==========
+// ========== 内嵌字幕探测、查看与导出 ==========
 // 选定源视频后探测内嵌字幕流；失败静默（视为无内嵌字幕）
 async function probeEmbedded(video: string) {
+  // 换视频后旧的字幕内容不再有效，先收起查看对话框
+  viewerVisible.value = false
   subStreams.value = []
   if (!video) return
   try {
@@ -251,6 +242,12 @@ async function probeEmbedded(video: string) {
   }
 }
 
+// 打开字幕查看对话框，解码所选内嵌字幕流由对话框内部完成
+function viewSub(s: ffmpeg.SubStream) {
+  viewerIndex.value = s.index
+  viewerVisible.value = true
+}
+
 // 导出一条内嵌字幕：弹保存对话框（默认 <视频名>.<语言>.srt），完成后在日志面板提示
 async function exportSub(s: ffmpeg.SubStream) {
   const base = decodeURIComponent(inputVideo.value.replace(/\\/g, '/').split('/').pop() ?? '').replace(/\.[^.]+$/, '')
@@ -258,11 +255,11 @@ async function exportSub(s: ffmpeg.SubStream) {
   if (!out) return
   try {
     await ExtractSubtitle(inputVideo.value, s.index, out)
-    openLog(t('video.embedded'), [`${t('video.exportOk')}: ${out}`])
-    logVisible.value = true
+    openLog([`${t('video.exportOk')}: ${out}`])
+    openDock('log')
   } catch (e) {
-    openLog(t('video.embedded'), [`${t('video.exportFail')}: ${String(e)}`])
-    logVisible.value = true
+    openLog([`${t('video.exportFail')}: ${String(e)}`])
+    openDock('log')
   }
 }
 
@@ -388,6 +385,7 @@ function resetForm() {
   inputVideo.value = ''
   outputVideo.value = ''
   subStreams.value = []
+  viewerVisible.value = false
   videoDragOver.value = false
   subDragOver.value = false
   burnSubDragOver.value = false
@@ -397,20 +395,12 @@ function resetForm() {
 }
 
 onMounted(() => {
-  EventsOn('jobUpdate', (job: any) => {
-    if (job && job.jobId) {
-      store.updateJob(job)
-      // 日志实时流入底部日志框：每次任务更新即刷新面板内容
-      const name = (job.outputVideo ?? '').replace(/\\/g, '/').split('/').pop() || t('job.unnamed')
-      openLog(name, job.log ?? [])
-      // 任务成功后自动清空表单，方便处理下一个视频
-      if (job.status === 'done') resetForm()
-    }
-  })
-  // Wails 原生拖拽：关闭内建 drop-target 过滤，自行按坐标反查拖放区
-  OnFileDrop((x, y, paths) => {
-    handleDroppedPaths(zoneAt(x, y), paths)
-  }, false)
+  // 拖放区注册：本页三个区域，分发逻辑在 App.vue（全局只注册一次 OnFileDrop）
+  registerDropZone('video', (paths) => handleDroppedPaths('video', paths))
+  registerDropZone('sub', (paths) => handleDroppedPaths('sub', paths))
+  registerDropZone('burn', (paths) => handleDroppedPaths('burn', paths))
+  // 本页任务的完成回调：清空表单，方便处理下一个视频
+  store.registerDoneHandler('subtitle', resetForm)
   tracks.value.push(newTrack())
 })
 </script>
@@ -439,16 +429,6 @@ onMounted(() => {
 .sub-drop {
   margin-bottom: var(--gap-md);
 }
-.card-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.btn-clear {
-  height: 26px;
-  padding: 0 12px;
-  font-size: 12px;
-}
 .embedded-list {
   margin-top: var(--gap-sm);
   display: flex;
@@ -468,7 +448,12 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.btn-export {
+.embedded-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.btn-embedded {
   flex-shrink: 0;
   font-size: 12px;
   padding: 2px 10px;

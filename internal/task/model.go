@@ -21,17 +21,28 @@ type SubConfig struct {
 	FontFile string     `json:"fontFile,omitempty"`
 }
 
+// ConvertConfig 转码配置
+type ConvertConfig struct {
+	Format     string `json:"format"`          // 输出容器：mp4 / mkv / mov（决定输出扩展名）
+	VideoCodec string `json:"videoCodec"`      // copy / libx264 / libx265
+	AudioCodec string `json:"audioCodec"`      // copy / aac / ac3 / mp3
+	Crf        int    `json:"crf,omitempty"`   // 质量（0 = 编码器默认），仅视频重编码时生效
+	Scale      string `json:"scale,omitempty"` // 分辨率：空/"source" = 保持源分辨率，"1080p"/"720p"/"480p"
+}
+
 // Job 一次转码/封装任务
 type Job struct {
-	JobId          string    `json:"jobId"`
-	InputVideo     string    `json:"inputVideo"`
-	OutputVideo    string    `json:"outputVideo"`
-	SubConfig      SubConfig `json:"subConfig"`
-	TotalSeconds   float64   `json:"totalSeconds"`
-	CurrentSeconds float64   `json:"currentSeconds"`
-	Progress       float64   `json:"progress"` // 0~100
-	Status         string    `json:"status"`   // pending / running / done / error / cancelled
-	Log            []string  `json:"log"`
+	JobId          string        `json:"jobId"`
+	Kind           string        `json:"kind"` // subtitle / convert
+	InputVideo     string        `json:"inputVideo"`
+	OutputVideo    string        `json:"outputVideo"`
+	SubConfig      SubConfig     `json:"subConfig"`
+	ConvertConfig  ConvertConfig `json:"convertConfig"`
+	TotalSeconds   float64       `json:"totalSeconds"`
+	CurrentSeconds float64       `json:"currentSeconds"`
+	Progress       float64       `json:"progress"` // 0~100
+	Status         string        `json:"status"`   // pending / running / done / error / cancelled
+	Log            []string      `json:"log"`
 
 	mu     sync.Mutex
 	ctx    context.Context
@@ -44,9 +55,11 @@ func (j *Job) Snapshot() *Job {
 	defer j.mu.Unlock()
 	return &Job{
 		JobId:          j.JobId,
+		Kind:           j.Kind,
 		InputVideo:     j.InputVideo,
 		OutputVideo:    j.OutputVideo,
 		SubConfig:      j.SubConfig,
+		ConvertConfig:  j.ConvertConfig,
 		TotalSeconds:   j.TotalSeconds,
 		CurrentSeconds: j.CurrentSeconds,
 		Progress:       j.Progress,

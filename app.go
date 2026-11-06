@@ -34,15 +34,18 @@ func (a *App) Startup(ctx context.Context) {
 
 // SubmitJobReq 提交任务请求
 type SubmitJobReq struct {
-	InputVideo   string         `json:"inputVideo"`
-	OutputVideo  string         `json:"outputVideo"`
-	OutputMode   string         `json:"outputMode"`   // custom / same / exe
-	OutputSuffix string         `json:"outputSuffix"` // same/exe 模式下拼接在原文件名后
-	SubConfig    task.SubConfig `json:"subConfig"`
+	Kind          string             `json:"kind"` // subtitle（默认）/ convert
+	InputVideo    string             `json:"inputVideo"`
+	OutputVideo   string             `json:"outputVideo"`
+	OutputMode    string             `json:"outputMode"`   // custom / same / exe
+	OutputSuffix  string             `json:"outputSuffix"` // same/exe 模式下拼接在原文件名后
+	SubConfig     task.SubConfig     `json:"subConfig"`
+	ConvertConfig task.ConvertConfig `json:"convertConfig"`
 }
 
 // resolveOutputPath 按输出模式计算最终输出路径：
-// same = 输入视频同目录；exe = 程序可执行文件目录；custom（默认）= 直接使用 OutputVideo
+// same = 输入视频同目录；exe = 程序可执行文件目录；custom（默认）= 直接使用 OutputVideo。
+// 转码任务的输出扩展名跟随所选容器格式，其余任务跟随源视频。
 func (a *App) resolveOutputPath(req SubmitJobReq) (string, error) {
 	base := strings.TrimSuffix(filepath.Base(req.InputVideo), filepath.Ext(req.InputVideo))
 	suffix := req.OutputSuffix
@@ -50,10 +53,16 @@ func (a *App) resolveOutputPath(req SubmitJobReq) (string, error) {
 		suffix = ".subbed"
 	} else if ext := filepath.Ext(suffix); strings.TrimSuffix(suffix, ext) != "" {
 		// 容忍旧格式：后缀里带了扩展名（如 .subbed.mp4）则剥掉，
-		// 输出扩展名始终跟随源容器
+		// 输出扩展名始终由后端决定
 		suffix = strings.TrimSuffix(suffix, ext)
 	}
 	ext := filepath.Ext(req.InputVideo)
+	if req.Kind == "convert" {
+		var err error
+		if ext, err = ffmpeg.ResolveConvertFormat(req.ConvertConfig.Format); err != nil {
+			return "", err
+		}
+	}
 	switch req.OutputMode {
 	case "same":
 		return filepath.Join(filepath.Dir(req.InputVideo), base+suffix+ext), nil
@@ -81,15 +90,20 @@ func (a *App) SubmitJob(req SubmitJobReq) (*task.Job, error) {
 		return nil, fmt.Errorf("outputVideo is required")
 	}
 
+	if req.Kind == "" {
+		req.Kind = "subtitle"
+	}
 	jobId := uuid.NewString()
 	ctxJob, cancel := context.WithCancel(context.Background())
 	job := &task.Job{
-		JobId:       jobId,
-		InputVideo:  req.InputVideo,
-		OutputVideo: outputVideo,
-		SubConfig:   req.SubConfig,
-		Status:      "pending",
-		Log:         []string{},
+		JobId:         jobId,
+		Kind:          req.Kind,
+		InputVideo:    req.InputVideo,
+		OutputVideo:   outputVideo,
+		SubConfig:     req.SubConfig,
+		ConvertConfig: req.ConvertConfig,
+		Status:        "pending",
+		Log:           []string{},
 	}
 	job.BindCtx(ctxJob, cancel)
 	a.jobMgr.AddJob(job)
@@ -106,7 +120,12 @@ func (a *App) SubmitJob(req SubmitJobReq) (*task.Job, error) {
 			}
 		}
 
-		args, err := ffmpeg.BuildArgs(job.InputVideo, job.OutputVideo, job.SubConfig)
+		var args []string
+		if job.Kind == "convert" {
+			args, err = ffmpeg.BuildConvertArgs(job.InputVideo, job.OutputVideo, job.ConvertConfig)
+		} else {
+			args, err = ffmpeg.BuildArgs(job.InputVideo, job.OutputVideo, job.SubConfig)
+		}
 		if err != nil {
 			job.Status = "error"
 			job.AppendLog(err.Error())
@@ -179,6 +198,11 @@ func (a *App) ProbeSubtitles(videoPath string) ([]ffmpeg.SubStream, error) {
 // ExtractSubtitle 导出视频内嵌字幕为 srt 文件
 func (a *App) ExtractSubtitle(videoPath string, streamIndex int, outPath string) error {
 	return ffmpeg.ExtractSubtitle(videoPath, streamIndex, outPath)
+}
+
+// ReadSubtitle 读取视频内嵌字幕并转成 SRT 文本，供前端「查看字幕」对话框展示（不写文件）
+func (a *App) ReadSubtitle(videoPath string, streamIndex int) (string, error) {
+	return ffmpeg.ReadSubtitle(videoPath, streamIndex)
 }
 
 // InferSubtitleLang 从字幕文件名推断语言代码（chs/cht/eng/jpn/kor）

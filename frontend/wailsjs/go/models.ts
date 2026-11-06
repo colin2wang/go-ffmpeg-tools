@@ -67,11 +67,13 @@ export namespace frontend {
 export namespace main {
 	
 	export class SubmitJobReq {
+	    kind: string;
 	    inputVideo: string;
 	    outputVideo: string;
 	    outputMode: string;
 	    outputSuffix: string;
 	    subConfig: task.SubConfig;
+	    convertConfig: task.ConvertConfig;
 	
 	    static createFrom(source: any = {}) {
 	        return new SubmitJobReq(source);
@@ -79,11 +81,13 @@ export namespace main {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
 	        this.inputVideo = source["inputVideo"];
 	        this.outputVideo = source["outputVideo"];
 	        this.outputMode = source["outputMode"];
 	        this.outputSuffix = source["outputSuffix"];
 	        this.subConfig = this.convertValues(source["subConfig"], task.SubConfig);
+	        this.convertConfig = this.convertValues(source["convertConfig"], task.ConvertConfig);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -109,6 +113,26 @@ export namespace main {
 
 export namespace task {
 	
+	export class ConvertConfig {
+	    format: string;
+	    videoCodec: string;
+	    audioCodec: string;
+	    crf?: number;
+	    scale?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConvertConfig(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.format = source["format"];
+	        this.videoCodec = source["videoCodec"];
+	        this.audioCodec = source["audioCodec"];
+	        this.crf = source["crf"];
+	        this.scale = source["scale"];
+	    }
+	}
 	export class SubTrack {
 	    file: string;
 	    lang: string;
@@ -165,9 +189,11 @@ export namespace task {
 	}
 	export class Job {
 	    jobId: string;
+	    kind: string;
 	    inputVideo: string;
 	    outputVideo: string;
 	    subConfig: SubConfig;
+	    convertConfig: ConvertConfig;
 	    totalSeconds: number;
 	    currentSeconds: number;
 	    progress: number;
@@ -181,9 +207,11 @@ export namespace task {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.jobId = source["jobId"];
+	        this.kind = source["kind"];
 	        this.inputVideo = source["inputVideo"];
 	        this.outputVideo = source["outputVideo"];
 	        this.subConfig = this.convertValues(source["subConfig"], SubConfig);
+	        this.convertConfig = this.convertValues(source["convertConfig"], ConvertConfig);
 	        this.totalSeconds = source["totalSeconds"];
 	        this.currentSeconds = source["currentSeconds"];
 	        this.progress = source["progress"];

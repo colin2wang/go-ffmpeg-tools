@@ -4,12 +4,15 @@ import type { Job } from '../types/task'
 interface JobsState {
   jobs: Record<string, Job>
   order: string[]
+  // 任务完成回调（按任务类型注册）：全局 jobUpdate 分发后通知对应页面清空表单
+  doneHandlers: Record<string, (() => void) | undefined>
 }
 
 export const useJobsStore = defineStore('jobs', {
   state: (): JobsState => ({
     jobs: {},
     order: [],
+    doneHandlers: {},
   }),
   getters: {
     jobList(state): Job[] {
@@ -38,6 +41,10 @@ export const useJobsStore = defineStore('jobs', {
     clearJobs() {
       this.jobs = {}
       this.order = []
+    },
+    // 各页面在 onMounted 注册自己任务类型的完成回调（清空表单等）
+    registerDoneHandler(kind: string, fn: () => void) {
+      this.doneHandlers[kind] = fn
     },
   },
 })

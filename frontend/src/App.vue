@@ -42,8 +42,8 @@
         <!-- 字幕工具页用 v-show 常驻：表单状态（视频/字幕路径）跨页面保留，
              且 onMounted 里的 OnFileDrop 只注册一次，避免切页后旧回调闭包残留 -->
         <Index v-show="activeMenu === 'subtitle'" />
+        <Convert v-show="activeMenu === 'convert'" />
         <Version v-if="activeMenu === 'info'" />
-        <div v-if="activeMenu === 'convert'" class="placeholder">{{ t('app.placeholder') }}</div>
       </main>
     </div>
 
@@ -52,6 +52,7 @@
       <button
         v-if="showBackTop"
         class="back-to-top"
+        :class="{ 'above-dock': dockOpen }"
         :title="t('app.backToTop')"
         @click="scrollToTop"
       >
@@ -59,20 +60,22 @@
       </button>
     </Transition>
 
-    <!-- 底部固定日志窗口（切换菜单保持不变） -->
-    <LogPanel />
+    <!-- 底部固定抽屉：任务队列 / 日志 标签切换（切换菜单保持不变） -->
+    <BottomDock />
 
-    <!-- 底部状态栏：左侧状态 + 日志开关按钮，右侧总数 -->
+    <!-- 底部状态栏：左侧状态 + 抽屉展开/隐藏按钮，右侧总数 -->
     <footer class="status-bar">
-      <span>{{ runningCount > 0 ? t('status.running', { n: runningCount }) : t('status.ready') }}</span>
-      <button
-        class="btn-log-toggle"
-        :class="{ open: logVisible }"
-        :title="logVisible ? t('log.collapse') : t('log.expand')"
-        @click="toggleLog"
-      >
-        <component :is="logVisible ? ChevronDown : ChevronUp" :size="12" /> {{ t('log.title') }}
-      </button>
+      <div class="status-left">
+        <span>{{ runningCount > 0 ? t('status.running', { n: runningCount }) : t('status.ready') }}</span>
+        <button
+          class="btn-log-toggle"
+          :title="dockOpen ? t('dock.hide') : t('dock.expand')"
+          @click="dockOpen = !dockOpen"
+        >
+          <component :is="dockOpen ? ChevronDown : ChevronUp" :size="12" />
+          {{ dockOpen ? t('dock.hide') : t('dock.expand') }}
+        </button>
+      </div>
       <span>{{ t('status.total', { n: store.jobList.length }) }}</span>
     </footer>
   </div>
@@ -82,17 +85,32 @@
 import { computed, onMounted, ref, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Subtitles, Repeat, Info, Sun, Moon, ChevronDown, ChevronUp, Languages, ArrowUp } from 'lucide-vue-next'
+import { EventsOn, OnFileDrop } from '../wailsjs/runtime/runtime'
 import Index from './views/Index.vue'
+import Convert from './views/Convert.vue'
 import Version from './views/Version.vue'
-import LogPanel from './components/LogPanel.vue'
+import BottomDock from './components/BottomDock.vue'
 import { useTheme } from './composables/theme'
-import { logVisible, toggleLog } from './composables/logPanel'
+import { dockOpen, openLog } from './composables/bottomDock'
+import { zoneAt, dispatchDrop } from './composables/fileDrop'
 import { LOCALE_OPTIONS, saveLocale, type Locale } from './i18n'
 import { useJobsStore } from './stores/jobs'
 
-// 挂载前先应用主题，避免闪烁
+// 挂载前先应用主题；同时注册全局任务事件与文件拖拽分发
 onMounted(() => {
   useTheme()
+  // 全局任务事件：更新 store + 日志流；任务完成按类型分发给对应页面的回调（清空表单）
+  EventsOn('jobUpdate', (job: any) => {
+    if (job && job.jobId) {
+      store.updateJob(job)
+      openLog(job.log ?? [])
+      if (job.status === 'done') store.doneHandlers[job.kind]?.()
+    }
+  })
+  // Wails 原生拖拽：全局只注册一次，按坐标反查 data-drop-zone 后分发给各页面处理器
+  OnFileDrop((x: number, y: number, paths: string[]) => {
+    dispatchDrop(zoneAt(x, y), paths)
+  }, false)
 })
 
 interface MenuItem {
@@ -104,7 +122,7 @@ interface MenuItem {
 // emoji 字符串 → 图标组件
 const menuItems: MenuItem[] = [
   { key: 'subtitle', icon: Subtitles },
-  { key: 'convert', icon: Repeat, disabled: true },
+  { key: 'convert', icon: Repeat },
   { key: 'info', icon: Info },
 ]
 
@@ -118,10 +136,10 @@ const runningCount = computed(() => store.jobList.filter((j) => j.status === 'ru
 // ========== 回到顶部（框架层统一实现：滚动 .content 容器） ==========
 const contentEl = ref<HTMLElement | null>(null)
 const showBackTop = ref(false)
-// 滚动超过内容区高度 1/3 时显示
+// 滚动超过 50px 即显示（内容不长时滚到底也要能看到）
 function onContentScroll(e: Event) {
   const el = e.target as HTMLElement
-  showBackTop.value = el.scrollTop > el.clientHeight / 3
+  showBackTop.value = el.scrollTop > 50
 }
 function scrollToTop() {
   contentEl.value?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -164,6 +182,10 @@ function switchLocale(value: Locale) {
   &:hover {
     color: var(--primary);
     border-color: var(--primary-border);
+  }
+  // 底部抽屉（任务队列/日志，240px）打开时，抬到抽屉上方，避免盖在日志窗口上
+  &.above-dock {
+    bottom: 280px;
   }
 }
 // 出现/消失过渡

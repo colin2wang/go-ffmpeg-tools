@@ -21,11 +21,22 @@ export interface SubConfig {
   fontFile?: string
 }
 
+// 转码配置：format 决定输出容器（扩展名）；copy 表示对应流直接复制不重编码
+export interface ConvertConfig {
+  format: string // mp4 / mkv / mov
+  videoCodec: string // copy / libx264 / libx265
+  audioCodec: string // copy / aac / ac3 / mp3
+  crf?: number // 质量，仅视频重编码时生效
+  scale?: string // source / 1080p / 720p / 480p
+}
+
 export interface Job {
   jobId: string
+  kind: 'subtitle' | 'convert'
   inputVideo: string
   outputVideo: string
   subConfig: SubConfig
+  convertConfig: ConvertConfig
   totalSeconds: number
   currentSeconds: number
   progress: number // 0~100
@@ -34,11 +45,13 @@ export interface Job {
 }
 
 export interface SubmitJobReq {
+  kind: 'subtitle' | 'convert'
   inputVideo: string
   outputVideo: string
   outputMode: OutputMode
   outputSuffix: string
   subConfig: SubConfig
+  convertConfig?: ConvertConfig
 }
 
 // code 为常用缩写（chs/cht 等），提交后由后端映射为 ffmpeg 的 ISO 639-2 标签

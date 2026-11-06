@@ -16,7 +16,7 @@
     </div>
     <div class="job-meta">
       <span>
-        {{ modeLabel(job.subConfig.mode) }} · {{ fmtTime(job.currentSeconds) }} / {{ fmtTime(job.totalSeconds) }} ·
+        {{ modeLabel(job) }} · {{ fmtTime(job.currentSeconds) }} / {{ fmtTime(job.totalSeconds) }} ·
         {{ progressPct.toFixed(1) }}%
       </span>
     </div>
@@ -42,8 +42,13 @@ function statusLabel(s: Job['status']): string {
   return t('job.' + s)
 }
 
-function modeLabel(m: string): string {
-  return m === 'soft' ? t('job.softMode') : t('job.burnMode')
+function modeLabel(job: Job): string {
+  if (job.kind === 'convert') {
+    const c = job.convertConfig
+    const parts = [c.format?.toUpperCase(), c.videoCodec === 'copy' ? t('convert.codecCopy') : c.videoCodec]
+    return `${t('job.convertMode')} · ${parts.filter(Boolean).join(' / ')}`
+  }
+  return job.subConfig.mode === 'soft' ? t('job.softMode') : t('job.burnMode')
 }
 
 function fmtTime(sec: number): string {

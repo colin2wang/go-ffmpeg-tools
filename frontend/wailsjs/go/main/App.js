@@ -26,6 +26,10 @@ export function ProbeSubtitles(arg1) {
   return window['go']['main']['App']['ProbeSubtitles'](arg1);
 }
 
+export function ReadSubtitle(arg1, arg2) {
+  return window['go']['main']['App']['ReadSubtitle'](arg1, arg2);
+}
+
 export function SelectFile(arg1, arg2) {
   return window['go']['main']['App']['SelectFile'](arg1, arg2);
 }

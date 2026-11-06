@@ -17,6 +17,8 @@ export function InferSubtitleLang(arg1:string):Promise<string>;
 
 export function ProbeSubtitles(arg1:string):Promise<Array<ffmpeg.SubStream>>;
 
+export function ReadSubtitle(arg1:string,arg2:number):Promise<string>;
+
 export function SelectFile(arg1:string,arg2:Array<frontend.FileFilter>):Promise<string>;
 
 export function SelectOutputFile(arg1:string,arg2:string):Promise<string>;

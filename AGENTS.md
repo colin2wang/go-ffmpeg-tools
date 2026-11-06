@@ -13,19 +13,20 @@ Go 1.26 + Wails v2.16.0 (Wails CLI pinned to v2.16.0) desktop app, with a Vue3 +
 
 ## Architecture
 - `main.go`: wails.Run, `//go:embed all:frontend/dist` embeds the frontend bundle; `Bind` exposes the `App` methods from `app.go` to the frontend.
-- `internal/task`: Job model and a concurrency-safe task Manager (cancel, in-order listing).
-- `internal/ffmpeg`: ffmpeg argument building and process execution; `builder.go` handles the two command paths — soft subtitles (multi-track mov_text) and hard burn-in.
-- `frontend/src`: App.vue is the sidebar shell (menu switching, no vue-router); views/Index.vue is the subtitle tools page; i18n uses vue-i18n with locale packs in `frontend/src/i18n/locales/{zh-CN,en,ja}.ts`.
+- `internal/task`: Job model and a concurrency-safe task Manager (cancel, in-order listing). A `Job` has `Kind` (`subtitle` / `convert`) plus either `SubConfig` or `ConvertConfig` (`ffmpeg.ConvertConfig`: format mp4/mkv/mov, video/audio codec or `copy`, CRF, scale preset).
+- `internal/ffmpeg`: ffmpeg argument building and process execution; `builder.go` handles the two subtitle command paths — soft subtitles (multi-track mov_text) and hard burn-in; `convert.go` builds transcode args (`BuildConvertArgs`) and validates formats/codecs (`ResolveConvertFormat`).
+- `frontend/src`: App.vue is the sidebar shell (menu switching, no vue-router) and owns the global `jobUpdate` event handler and the single `OnFileDrop` registration; views/Index.vue is the subtitle tools page, views/Convert.vue is the transcode page; the bottom dock (`components/BottomDock.vue` + `composables/bottomDock.ts`) holds the job queue and log as tabs outside the pages; i18n uses vue-i18n with locale packs in `frontend/src/i18n/locales/{zh-CN,en,ja}.ts`.
 
 ## Non-obvious gotchas
 - `frontend/wailsjs/` contains Wails-generated bindings; do not edit by hand. Model classes generated there (`main.SubmitJobReq`, `task.SubConfig`, etc.) must be constructed with `new` — plain literals are rejected by the convertValues runtime.
 - After adding App methods, regenerate bindings via `wails generate module` (or `wails dev`/build).
-- File drag-and-drop: `OnFileDrop` is called with `useDropTarget=false`; the frontend resolves the drop zone manually via `data-drop-zone` attributes + `document.elementFromPoint`. The CSS property for the default highlight that is disabled is `--wails-drop-target`.
+- File drag-and-drop: `OnFileDrop` with `useDropTarget=false` is registered exactly once, in App.vue; it resolves the drop zone from `data-drop-zone` attributes + `document.elementFromPoint` and dispatches via `composables/fileDrop.ts`, where each page registers its zones (`registerDropZone`). The CSS property for the default highlight that is disabled is `--wails-drop-target`.
 - ffmpeg binary lookup order at runtime: `build/ffmpeg/<GOOS>/ffmpeg(.exe)` next to the executable → PATH.
 - On Windows the ffmpeg child process must hide its console window (`CREATE_NO_WINDOW` in `runner_windows.go`); platform differences are split via build tags.
 - Subtitle language codes like `chs/cht` are mapped to ISO 639-2 by `builder.normalizeLang`; the subtitles filter path for hard burn must go through `escapeFilterPath` (Windows drive-letter colons, etc.).
 - Any new UI copy must be added to all three locale packs (zh-CN/en/ja); fallback locale is zh-CN.
 - In `wails.json`, `frontend:install` uses pnpm and `frontend:build` uses npm — do not mix or change them.
+- Embedded subtitle viewing (`frontend/src/components/SubtitleViewer.vue`, opened from the embedded-stream list in `views/Index.vue`) calls `App.ReadSubtitle` → `ffmpeg.ReadSubtitle`, which pipes SRT text to stdout (`-f srt pipe:1`) instead of writing temp files; bitmap subtitle codecs (PGS/DVD/DVB) are rejected by `isBitmapSubtitle` before ffmpeg runs.
 - `docs/history/` holds historical design notes for background only; build artifacts live in `build/bin` and must not be committed.
 
 ## Instruction-file maintenance rules
