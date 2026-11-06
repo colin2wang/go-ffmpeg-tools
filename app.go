@@ -181,6 +181,11 @@ func (a *App) ExtractSubtitle(videoPath string, streamIndex int, outPath string)
 	return ffmpeg.ExtractSubtitle(videoPath, streamIndex, outPath)
 }
 
+// ReadSubtitle 读取视频内嵌字幕并转成 SRT 文本，供前端「查看字幕」对话框展示（不写文件）
+func (a *App) ReadSubtitle(videoPath string, streamIndex int) (string, error) {
+	return ffmpeg.ReadSubtitle(videoPath, streamIndex)
+}
+
 // InferSubtitleLang 从字幕文件名推断语言代码（chs/cht/eng/jpn/kor）
 func (a *App) InferSubtitleLang(path string) string {
 	return ffmpeg.InferLang(path)

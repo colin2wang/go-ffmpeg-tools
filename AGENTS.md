@@ -26,6 +26,7 @@ Go 1.26 + Wails v2.16.0 (Wails CLI pinned to v2.16.0) desktop app, with a Vue3 +
 - Subtitle language codes like `chs/cht` are mapped to ISO 639-2 by `builder.normalizeLang`; the subtitles filter path for hard burn must go through `escapeFilterPath` (Windows drive-letter colons, etc.).
 - Any new UI copy must be added to all three locale packs (zh-CN/en/ja); fallback locale is zh-CN.
 - In `wails.json`, `frontend:install` uses pnpm and `frontend:build` uses npm — do not mix or change them.
+- Embedded subtitle viewing (`frontend/src/components/SubtitleViewer.vue`, opened from the embedded-stream list in `views/Index.vue`) calls `App.ReadSubtitle` → `ffmpeg.ReadSubtitle`, which pipes SRT text to stdout (`-f srt pipe:1`) instead of writing temp files; bitmap subtitle codecs (PGS/DVD/DVB) are rejected by `isBitmapSubtitle` before ffmpeg runs.
 - `docs/history/` holds historical design notes for background only; build artifacts live in `build/bin` and must not be committed.
 
 ## Instruction-file maintenance rules

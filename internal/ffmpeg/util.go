@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 )
 
 // versionRegex 从 "ffmpeg version 6.1.1-full_build ..." 第一行提取版本号
@@ -168,25 +170,37 @@ func ProbeSubtitles(videoPath string) ([]SubStream, error) {
 	return streams, nil
 }
 
+// findSubtitleStream 按 ffprobe 的绝对流索引查找内嵌字幕流
+func findSubtitleStream(videoPath string, streamIndex int) (*SubStream, error) {
+	streams, err := ProbeSubtitles(videoPath)
+	if err != nil {
+		return nil, err
+	}
+	for i := range streams {
+		if streams[i].Index == streamIndex {
+			return &streams[i], nil
+		}
+	}
+	return nil, fmt.Errorf("subtitle stream 0:%d not found", streamIndex)
+}
+
+// isBitmapSubtitle 位图字幕（PGS / DVD / DVB 等）没有文本层，无法转成 srt 文本
+func isBitmapSubtitle(codecName string) bool {
+	switch strings.ToLower(codecName) {
+	case "dvd_subtitle", "hdmv_pgs_subtitle", "dvb_subtitle", "dvb_teletext":
+		return true
+	}
+	return false
+}
+
 // ExtractSubtitle 导出第 streamIndex（绝对流索引）路内嵌字幕为 srt；
 // 位图字幕（PGS / DVD / DVB 等）无法转为文本，返回错误。
 func ExtractSubtitle(videoPath string, streamIndex int, outPath string) error {
-	streams, err := ProbeSubtitles(videoPath)
+	target, err := findSubtitleStream(videoPath, streamIndex)
 	if err != nil {
 		return err
 	}
-	var target *SubStream
-	for i := range streams {
-		if streams[i].Index == streamIndex {
-			target = &streams[i]
-			break
-		}
-	}
-	if target == nil {
-		return fmt.Errorf("subtitle stream 0:%d not found", streamIndex)
-	}
-	switch strings.ToLower(target.CodecName) {
-	case "dvd_subtitle", "hdmv_pgs_subtitle", "dvb_subtitle", "dvb_teletext":
+	if isBitmapSubtitle(target.CodecName) {
 		return fmt.Errorf("bitmap subtitle codec %s cannot be exported as srt", target.CodecName)
 	}
 
@@ -205,6 +219,48 @@ func ExtractSubtitle(videoPath string, streamIndex int, outPath string) error {
 		return fmt.Errorf("extract subtitle: %w: %s", err, strings.TrimSpace(string(out)))
 	}
 	return nil
+}
+
+// ReadSubtitle 把第 streamIndex（绝对流索引）路内嵌字幕解码为 SRT 文本返回。
+// 直接把 srt 输出到 stdout（pipe:1），不生成临时文件；位图字幕无文本层，返回错误。
+func ReadSubtitle(videoPath string, streamIndex int) (string, error) {
+	target, err := findSubtitleStream(videoPath, streamIndex)
+	if err != nil {
+		return "", err
+	}
+	if isBitmapSubtitle(target.CodecName) {
+		return "", fmt.Errorf("bitmap subtitle codec %s cannot be displayed as text", target.CodecName)
+	}
+
+	ffBin, err := GetFFmpegBinPath()
+	if err != nil {
+		return "", err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, ffBin,
+		"-v", "error",
+		"-i", videoPath,
+		"-map", fmt.Sprintf("0:s:%d", target.RelIndex),
+		"-c:s", "srt",
+		"-f", "srt",
+		"pipe:1",
+	)
+	hideCmdWindow(cmd)
+	out, err := cmd.Output()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if detail := strings.TrimSpace(string(exitErr.Stderr)); detail != "" {
+				return "", fmt.Errorf("read subtitle: %w: %s", err, detail)
+			}
+		}
+		return "", fmt.Errorf("read subtitle: %w", err)
+	}
+	text := strings.TrimSpace(strings.ReplaceAll(strings.TrimPrefix(string(out), "\ufeff"), "\r\n", "\n"))
+	if text == "" {
+		return "", fmt.Errorf("subtitle stream 0:%d has no readable text", streamIndex)
+	}
+	return text, nil
 }
 
 // ProbeDuration 用 ffprobe 探测视频总时长（秒）；探测失败返回 0，由调用方容忍。

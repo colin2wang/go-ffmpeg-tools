@@ -18,13 +18,16 @@
         </template>
         <span v-else :title="inputVideo">{{ inputVideo }}</span>
       </div>
-      <!-- 内嵌字幕轨道列表（探测到才显示），支持逐条导出为 srt -->
+      <!-- 内嵌字幕轨道列表（探测到才显示），支持逐条查看 / 导出为 srt -->
       <div v-if="subStreams.length" class="embedded-list">
         <div v-for="s in subStreams" :key="s.index" class="embedded-row">
           <span class="embedded-label" :title="`0:s:${s.relIndex}`">
             #{{ s.index }} {{ s.codecName }} · {{ s.language || 'und' }}<template v-if="s.title"> · {{ s.title }}</template>
           </span>
-          <button class="btn btn-secondary btn-export" @click="exportSub(s)">{{ t('video.export') }}</button>
+          <div class="embedded-actions">
+            <button class="btn btn-secondary btn-embedded" @click="viewSub(s)">{{ t('video.view') }}</button>
+            <button class="btn btn-secondary btn-embedded" @click="exportSub(s)">{{ t('video.export') }}</button>
+          </div>
         </div>
       </div>
     </div>
@@ -155,6 +158,16 @@
         <JobCard v-for="job in store.jobList" :key="job.jobId" :job="job" />
       </div>
     </div>
+
+    <!-- 字幕查看对话框：常驻以便复用已解码的字幕文本 -->
+    <SubtitleViewer
+      :visible="viewerVisible"
+      :video-path="inputVideo"
+      :streams="subStreams"
+      :initial-index="viewerIndex"
+      @close="viewerVisible = false"
+      @export="exportSub"
+    />
   </div>
 </template>
 
@@ -170,6 +183,7 @@ import { openLog, logVisible } from '../composables/logPanel'
 import type { Job, OutputMode, SubMode, SubTrack } from '../types/task'
 import SubTrackRow from '../components/SubTrackRow.vue'
 import JobCard from '../components/JobCard.vue'
+import SubtitleViewer from '../components/SubtitleViewer.vue'
 
 const { t } = useI18n()
 const store = useJobsStore()
@@ -188,6 +202,9 @@ const mode = ref<SubMode>('soft')
 const tracks = ref<SubTrack[]>([])
 // 内嵌字幕流（选定源视频后探测，0 条则不显示）
 const subStreams = ref<ffmpeg.SubStream[]>([])
+// 字幕查看对话框：visible 控制显隐，index 记录点「查看」时选中的流
+const viewerVisible = ref(false)
+const viewerIndex = ref(0)
 // 硬字幕专属
 const burnSubFile = ref('')
 const fontName = ref('Microsoft YaHei')
@@ -239,9 +256,11 @@ async function handleDroppedPaths(zone: string | null, paths: string[]) {
   }
 }
 
-// ========== 内嵌字幕探测与导出 ==========
+// ========== 内嵌字幕探测、查看与导出 ==========
 // 选定源视频后探测内嵌字幕流；失败静默（视为无内嵌字幕）
 async function probeEmbedded(video: string) {
+  // 换视频后旧的字幕内容不再有效，先收起查看对话框
+  viewerVisible.value = false
   subStreams.value = []
   if (!video) return
   try {
@@ -249,6 +268,12 @@ async function probeEmbedded(video: string) {
   } catch {
     /* 无 ffprobe 或无字幕：忽略 */
   }
+}
+
+// 打开字幕查看对话框，解码所选内嵌字幕流由对话框内部完成
+function viewSub(s: ffmpeg.SubStream) {
+  viewerIndex.value = s.index
+  viewerVisible.value = true
 }
 
 // 导出一条内嵌字幕：弹保存对话框（默认 <视频名>.<语言>.srt），完成后在日志面板提示
@@ -388,6 +413,7 @@ function resetForm() {
   inputVideo.value = ''
   outputVideo.value = ''
   subStreams.value = []
+  viewerVisible.value = false
   videoDragOver.value = false
   subDragOver.value = false
   burnSubDragOver.value = false
@@ -468,7 +494,12 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.btn-export {
+.embedded-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.btn-embedded {
   flex-shrink: 0;
   font-size: 12px;
   padding: 2px 10px;
