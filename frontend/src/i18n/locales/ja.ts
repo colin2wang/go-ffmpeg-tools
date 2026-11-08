@@ -104,6 +104,8 @@ export default {
   job: {
     unnamed: '出力名なし',
     cancel: 'キャンセル',
+    console: 'コンソール',
+    consoleTitle: 'FFmpeg コンソール',
     showLog: '▶ ログ',
     hideLog: 'ログを隠す',
     softMode: 'ソフト字幕 (mov_text)',

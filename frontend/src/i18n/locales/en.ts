@@ -104,6 +104,8 @@ export default {
   job: {
     unnamed: 'Untitled output',
     cancel: 'Cancel',
+    console: 'Console',
+    consoleTitle: 'FFmpeg Console',
     showLog: '▶ Log',
     hideLog: 'Hide log',
     softMode: 'Soft subs (mov_text)',

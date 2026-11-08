@@ -104,6 +104,8 @@ export default {
   job: {
     unnamed: '未命名输出',
     cancel: '取消',
+    console: '控制台',
+    consoleTitle: 'FFmpeg 控制台',
     showLog: '▶ 日志',
     hideLog: '收起日志',
     softMode: '软字幕封装 (mov_text)',
