@@ -2,7 +2,9 @@
 
 # FFMpeg Tools
 
-基于 **Go 1.26 + [Wails v2.16.0](https://wails.io)** 与 **Vue 3 + TypeScript + Vite** 前端构建的跨平台桌面 FFmpeg 工具箱。
+![Wails](https://img.shields.io/badge/Wails-v2.17.1-FF0000?logo=wails&logoColor=white) ![Go](https://img.shields.io/badge/Go-1.27+-00ADD8?logo=go&logoColor=white) ![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
+
+基于 Vue 3 + TypeScript 前端构建的跨平台桌面 FFmpeg 工具箱。
 
 当前版本聚焦 MP4 视频的字幕处理：既支持多轨软字幕封装（不重编码），也支持字幕硬烧录。
 

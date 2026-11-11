@@ -1,6 +1,6 @@
 # AGENTS.md — go-ffmpeg-tools
 
-Go 1.26 + Wails v2.16.0 (Wails CLI pinned to v2.16.0) desktop app, with a Vue3 + TS + Vite + pnpm frontend. Go module name is `go-ffmpeg-tools`.
+Go 1.27 + Wails v2.17.1 desktop app, with a Vue3 + TS + Vite + pnpm frontend. Go module name is `go-ffmpeg-tools`.
 
 ## Common commands
 - Build/package: `./build.ps1` (current platform), `-DebugBuild` for a debug binary, `-Platform "windows/amd64 linux/amd64"` for cross-platform. The script auto-installs the Wails CLI, runs `pnpm install --frozen-lockfile`, `wails build -clean`, and copies ffmpeg from `build/ffmpeg/<goos>/` into the output directory.

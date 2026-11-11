@@ -2,7 +2,9 @@
 
 # FFMpeg Tools
 
-A cross-platform desktop FFmpeg toolkit built with **Go 1.26 + [Wails v2.16.0](https://wails.io)** and a **Vue 3 + TypeScript + Vite** frontend.
+![Wails](https://img.shields.io/badge/Wails-v2.17.1-FF0000?logo=wails&logoColor=white) ![Go](https://img.shields.io/badge/Go-1.27+-00ADD8?logo=go&logoColor=white) ![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
+
+A cross-platform desktop FFmpeg toolkit with a Vue 3 + TypeScript frontend.
 
 The current release focuses on subtitle workflows for MP4 video: muxing multiple soft subtitle tracks without re-encoding, or burning a subtitle into the picture.
 
